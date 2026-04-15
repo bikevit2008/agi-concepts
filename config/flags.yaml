@@ -1,0 +1,23 @@
+# Feature Flags -- toggle components on/off for experiments
+# Reload at runtime via TUI without restart
+
+# Core agents
+perception_enabled: true
+emotion_enabled: true
+memory_enabled: true
+planning_enabled: true
+
+# Core mechanics
+hysteresis_enabled: true
+runtime_effects_enabled: true
+feedback_loops_enabled: true
+
+# Inner monologue & autonomy
+self_reflection_enabled: true
+autonomous_thoughts_enabled: true
+internal_stimulus_enabled: true
+
+# Experiment: emotion -> runtime mapping
+emotion_affects_temperature: true
+stress_narrows_context: true
+pain_reduces_bandwidth: true

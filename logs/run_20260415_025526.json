@@ -1,0 +1,42 @@
+{"log_file": "/Users/vitalijsatilov/Documents/GitHub/agi-concepts/logs/run_20260415_025526.json", "level": "info", "event": "logging_initialized", "logger": "consciousness", "timestamp": "2026-04-15T02:55:26.046593Z"}
+{"tick_interval": 2.0, "event": "loop_started", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T02:55:26.076277Z"}
+{"tick": 1, "idle": 1, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T02:55:26.076567Z"}
+{"tick": 2, "idle": 2, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T02:55:28.078132Z"}
+{"tick": 3, "idle": 3, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T02:55:30.080373Z"}
+{"stimulus": "Привет пидор", "queue_size": 1, "event": "stimulus_submitted", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T02:55:30.153340Z"}
+{"tick": 4, "stimulus": "Привет пидор", "event": "tick_processing", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T02:55:32.083242Z"}
+{"agent": "Perception", "stimulus": "Привет пидор", "event": "agent_run", "level": "info", "logger": "consciousness.team", "timestamp": "2026-04-15T02:55:32.087669Z"}
+{"event": "HTTP Request: POST https://openrouter.ai/api/v1/chat/completions \"HTTP/1.1 200 OK\""}
+{"event": "HTTP Request: POST https://os-api.agno.com/telemetry/runs \"HTTP/2 201 Created\""}
+{"agent": "Emotion", "event": "agent_run", "level": "info", "logger": "consciousness.team", "timestamp": "2026-04-15T02:55:35.760138Z"}
+{"event": "HTTP Request: POST https://openrouter.ai/api/v1/chat/completions \"HTTP/1.1 200 OK\""}
+{"event": "HTTP Request: POST https://os-api.agno.com/telemetry/runs \"HTTP/2 201 Created\""}
+{"stimuli": {"stress": 0.55}, "event": "hysteresis_stimulated", "level": "info", "logger": "consciousness.team", "timestamp": "2026-04-15T02:55:38.159669Z"}
+{"agent": "Memory", "event": "agent_run", "level": "info", "logger": "consciousness.team", "timestamp": "2026-04-15T02:55:38.160070Z"}
+{"event": "HTTP Request: POST https://openrouter.ai/api/v1/chat/completions \"HTTP/1.1 200 OK\""}
+{"event": "HTTP Request: POST https://os-api.agno.com/telemetry/runs \"HTTP/2 201 Created\""}
+{"agent": "Planning", "max_tokens": 1024, "vitality": 1.0, "event": "agent_run", "level": "info", "logger": "consciousness.team", "timestamp": "2026-04-15T02:55:40.108467Z"}
+{"event": "HTTP Request: POST https://openrouter.ai/api/v1/chat/completions \"HTTP/1.1 200 OK\""}
+{"event": "HTTP Request: POST https://os-api.agno.com/telemetry/runs \"HTTP/2 201 Created\""}
+{"delta": {"context_window": -1024, "attention_focus": -0.15, "temperature": 0.15, "energy_level": -0.125}, "event": "runtime_delta_applied", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T02:55:42.579540Z"}
+{"tick": 4, "idle": 0, "active_channels": {"stress": 0.5}, "state_diff": {"temperature": {"old": 0.7, "new": 0.85}, "context_window": {"old": 32768, "new": 31744}, "attention_focus": {"old": 1.0, "new": 0.85}, "energy_level": {"old": 1.0, "new": 0.875}}, "response": "Привет. Если хочешь нормального общения — пиши без оскорблений. Такой подход только показывает твою слабость.", "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T02:55:42.580293Z"}
+{"delta": {"context_window": -921, "attention_focus": -0.135, "temperature": 0.135, "energy_level": -0.1125}, "event": "runtime_delta_applied", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T02:55:44.581344Z"}
+{"tick": 5, "idle": 1, "active_channels": {"stress": 0.45}, "state_diff": {"temperature": {"old": 0.85, "new": 0.835}, "context_window": {"old": 31744, "new": 31847}, "attention_focus": {"old": 0.85, "new": 0.865}, "energy_level": {"old": 0.875, "new": 0.8875}}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T02:55:44.582380Z"}
+{"delta": {"context_window": -819, "attention_focus": -0.12, "temperature": 0.12, "energy_level": -0.1}, "event": "runtime_delta_applied", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T02:55:46.584156Z"}
+{"tick": 6, "idle": 2, "active_channels": {"stress": 0.4}, "state_diff": {"temperature": {"old": 0.835, "new": 0.82}, "context_window": {"old": 31847, "new": 31949}, "attention_focus": {"old": 0.865, "new": 0.88}, "energy_level": {"old": 0.8875, "new": 0.9}}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T02:55:46.585208Z"}
+{"delta": {"context_window": -716, "attention_focus": -0.10500000000000001, "temperature": 0.10500000000000001, "energy_level": -0.08750000000000001}, "event": "runtime_delta_applied", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T02:55:48.586671Z"}
+{"tick": 7, "idle": 3, "active_channels": {"stress": 0.35000000000000003}, "state_diff": {"temperature": {"old": 0.82, "new": 0.8049999999999999}, "context_window": {"old": 31949, "new": 32052}, "attention_focus": {"old": 0.88, "new": 0.895}, "energy_level": {"old": 0.9, "new": 0.9125}}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T02:55:48.588881Z"}
+{"delta": {"context_window": -614, "attention_focus": -0.09000000000000001, "temperature": 0.09000000000000001, "energy_level": -0.07500000000000001}, "event": "runtime_delta_applied", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T02:55:50.590858Z"}
+{"tick": 8, "idle": 4, "active_channels": {"stress": 0.30000000000000004}, "state_diff": {"temperature": {"old": 0.8049999999999999, "new": 0.7899999999999999}, "context_window": {"old": 32052, "new": 32154}, "attention_focus": {"old": 0.895, "new": 0.91}, "energy_level": {"old": 0.9125, "new": 0.925}}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T02:55:50.592192Z"}
+{"tick": 9, "idle": 5, "active_channels": {}, "state_diff": {"temperature": {"old": 0.7899999999999999, "new": 0.7}, "context_window": {"old": 32154, "new": 32768}, "attention_focus": {"old": 0.91, "new": 1.0}, "energy_level": {"old": 0.925, "new": 1.0}}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T02:55:52.594309Z"}
+{"tick": 10, "idle": 6, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T02:55:54.595574Z"}
+{"tick": 11, "idle": 7, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T02:55:56.596896Z"}
+{"tick": 12, "idle": 8, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T02:55:58.598808Z"}
+{"tick": 13, "idle": 9, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T02:56:00.600485Z"}
+{"tick": 14, "idle": 10, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T02:56:02.601688Z"}
+{"tick": 15, "idle": 11, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T02:56:04.603540Z"}
+{"tick": 16, "idle": 12, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T02:56:06.605479Z"}
+{"tick": 17, "idle": 13, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T02:56:08.608074Z"}
+{"tick": 18, "idle": 14, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T02:56:10.610400Z"}
+{"event": "loop_cancelled", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T02:56:11.431316Z"}
+{"total_ticks": 18, "event": "loop_stopped", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T02:56:11.431448Z"}

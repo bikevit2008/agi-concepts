@@ -1,0 +1,62 @@
+{"log_file": "/Users/vitalijsatilov/Documents/GitHub/agi-concepts/logs/run_20260415_015531.json", "level": "info", "event": "logging_initialized", "logger": "consciousness", "timestamp": "2026-04-15T01:55:31.629322Z"}
+{"tick_interval": 2.0, "event": "loop_started", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T01:55:31.656435Z"}
+{"tick": 1, "idle": 1, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T01:55:31.656783Z"}
+{"tick": 2, "idle": 2, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T01:55:33.658341Z"}
+{"tick": 3, "idle": 3, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T01:55:35.659375Z"}
+{"tick": 4, "idle": 4, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T01:55:37.660043Z"}
+{"tick": 5, "idle": 5, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T01:55:39.661583Z"}
+{"tick": 6, "idle": 6, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T01:55:41.662308Z"}
+{"tick": 7, "idle": 7, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T01:55:43.663161Z"}
+{"tick": 8, "idle": 8, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T01:55:45.663889Z"}
+{"tick": 9, "idle": 9, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T01:55:47.664731Z"}
+{"tick": 10, "idle": 10, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T01:55:49.665543Z"}
+{"tick": 11, "idle": 11, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T01:55:51.666218Z"}
+{"tick": 12, "idle": 12, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T01:55:53.667752Z"}
+{"tick": 13, "idle": 13, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T01:55:55.668525Z"}
+{"tick": 14, "idle": 14, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T01:55:57.669144Z"}
+{"tick": 15, "idle": 15, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T01:55:59.669740Z"}
+{"tick": 16, "idle": 16, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T01:56:01.670908Z"}
+{"tick": 17, "idle": 17, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T01:56:03.671458Z"}
+{"stimulus": "\u0442\u0430\u043a\u0442\u044b\u0443\u043c\u0435\u0440q", "queue_size": 1, "event": "stimulus_submitted", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T01:56:05.476846Z"}
+{"tick": 18, "stimulus": "\u0442\u0430\u043a\u0442\u044b\u0443\u043c\u0435\u0440q", "event": "tick_processing", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T01:56:05.672702Z"}
+{"agent": "Perception", "stimulus": "\u0442\u0430\u043a\u0442\u044b\u0443\u043c\u0435\u0440q", "event": "agent_run", "level": "info", "logger": "consciousness.team", "timestamp": "2026-04-15T01:56:05.675353Z"}
+{"event": "HTTP Request: POST https://openrouter.ai/api/v1/chat/completions \"HTTP/1.1 200 OK\""}
+{"event": "HTTP Request: POST https://os-api.agno.com/telemetry/runs \"HTTP/2 201 Created\""}
+{"agent": "Emotion", "event": "agent_run", "level": "info", "logger": "consciousness.team", "timestamp": "2026-04-15T01:56:08.235172Z"}
+{"event": "HTTP Request: POST https://openrouter.ai/api/v1/chat/completions \"HTTP/1.1 200 OK\""}
+{"event": "HTTP Request: POST https://os-api.agno.com/telemetry/runs \"HTTP/2 201 Created\""}
+{"agent": "Memory", "event": "agent_run", "level": "info", "logger": "consciousness.team", "timestamp": "2026-04-15T01:56:10.558655Z"}
+{"event": "HTTP Request: POST https://openrouter.ai/api/v1/chat/completions \"HTTP/1.1 200 OK\""}
+{"event": "HTTP Request: POST https://os-api.agno.com/telemetry/runs \"HTTP/2 201 Created\""}
+{"agent": "Planning", "event": "agent_run", "level": "info", "logger": "consciousness.team", "timestamp": "2026-04-15T01:56:12.656126Z"}
+{"event": "HTTP Request: POST https://openrouter.ai/api/v1/chat/completions \"HTTP/1.1 200 OK\""}
+{"event": "HTTP Request: POST https://os-api.agno.com/telemetry/runs \"HTTP/2 201 Created\""}
+{"tick": 18, "error": "'PlanningResult' object is not subscriptable", "event": "tick_error", "level": "error", "logger": "consciousness.loop", "timestamp": "2026-04-15T01:56:15.580802Z"}
+{"tick": 19, "idle": 1, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T01:56:17.582241Z"}
+{"tick": 20, "idle": 2, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T01:56:19.582833Z"}
+{"tick": 21, "idle": 3, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T01:56:21.584260Z"}
+{"tick": 22, "idle": 4, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T01:56:23.585580Z"}
+{"tick": 23, "idle": 5, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T01:56:25.587132Z"}
+{"tick": 24, "idle": 6, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T01:56:27.588884Z"}
+{"tick": 25, "idle": 7, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T01:56:29.589322Z"}
+{"tick": 26, "idle": 8, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T01:56:31.589889Z"}
+{"tick": 27, "idle": 9, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T01:56:33.591084Z"}
+{"tick": 28, "idle": 10, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T01:56:35.592200Z"}
+{"tick": 29, "idle": 11, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T01:56:37.593631Z"}
+{"tick": 30, "idle": 12, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T01:56:39.594254Z"}
+{"tick": 31, "idle": 13, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T01:56:41.595179Z"}
+{"tick": 32, "idle": 14, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T01:56:43.596874Z"}
+{"tick": 33, "idle": 15, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T01:56:45.598406Z"}
+{"tick": 34, "idle": 16, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T01:56:47.599594Z"}
+{"tick": 35, "idle": 17, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T01:56:49.601418Z"}
+{"tick": 36, "idle": 18, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T01:56:51.602630Z"}
+{"tick": 37, "idle": 19, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T01:56:53.603724Z"}
+{"tick": 38, "idle": 20, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T01:56:55.604855Z"}
+{"tick": 39, "idle": 21, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T01:56:57.606354Z"}
+{"tick": 40, "idle": 22, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T01:56:59.607573Z"}
+{"tick": 41, "idle": 23, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T01:57:01.609617Z"}
+{"tick": 42, "idle": 24, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T01:57:03.610258Z"}
+{"tick": 43, "idle": 25, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T01:57:05.611538Z"}
+{"tick": 44, "idle": 26, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T01:57:07.612518Z"}
+{"tick": 45, "idle": 27, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T01:57:09.613086Z"}
+{"tick": 46, "idle": 28, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T01:57:11.613926Z"}

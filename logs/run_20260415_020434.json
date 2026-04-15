@@ -1,0 +1,80 @@
+{"log_file": "/Users/vitalijsatilov/Documents/GitHub/agi-concepts/logs/run_20260415_020434.json", "level": "info", "event": "logging_initialized", "logger": "consciousness", "timestamp": "2026-04-15T02:04:34.314159Z"}
+{"tick_interval": 2.0, "event": "loop_started", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T02:04:34.347339Z"}
+{"tick": 1, "idle": 1, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T02:04:34.347684Z"}
+{"tick": 2, "idle": 2, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T02:04:36.348659Z"}
+{"tick": 3, "idle": 3, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T02:04:38.349643Z"}
+{"stimulus": "Привет пидор", "queue_size": 1, "event": "stimulus_submitted", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T02:04:40.036479Z"}
+{"tick": 4, "stimulus": "Привет пидор", "event": "tick_processing", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T02:04:40.350908Z"}
+{"agent": "Perception", "stimulus": "Привет пидор", "event": "agent_run", "level": "info", "logger": "consciousness.team", "timestamp": "2026-04-15T02:04:40.354926Z"}
+{"event": "HTTP Request: POST https://openrouter.ai/api/v1/chat/completions \"HTTP/1.1 200 OK\""}
+{"event": "HTTP Request: POST https://os-api.agno.com/telemetry/runs \"HTTP/2 201 Created\""}
+{"agent": "Emotion", "event": "agent_run", "level": "info", "logger": "consciousness.team", "timestamp": "2026-04-15T02:04:42.754123Z"}
+{"event": "HTTP Request: POST https://openrouter.ai/api/v1/chat/completions \"HTTP/1.1 200 OK\""}
+{"event": "HTTP Request: POST https://os-api.agno.com/telemetry/runs \"HTTP/2 201 Created\""}
+{"stimuli": {"stress": 0.55, "pain": 0.4}, "event": "hysteresis_stimulated", "level": "info", "logger": "consciousness.team", "timestamp": "2026-04-15T02:04:45.151086Z"}
+{"agent": "Memory", "event": "agent_run", "level": "info", "logger": "consciousness.team", "timestamp": "2026-04-15T02:04:45.151211Z"}
+{"event": "HTTP Request: POST https://openrouter.ai/api/v1/chat/completions \"HTTP/1.1 200 OK\""}
+{"event": "HTTP Request: POST https://os-api.agno.com/telemetry/runs \"HTTP/2 201 Created\""}
+{"agent": "Planning", "event": "agent_run", "level": "info", "logger": "consciousness.team", "timestamp": "2026-04-15T02:04:46.759996Z"}
+{"event": "HTTP Request: POST https://openrouter.ai/api/v1/chat/completions \"HTTP/1.1 200 OK\""}
+{"event": "HTTP Request: POST https://os-api.agno.com/telemetry/runs \"HTTP/2 201 Created\""}
+{"tick": 4, "idle": 0, "active_channels": {}, "response": "Привет. Если это попытка провокации или троллинга с использованием оскорблений, то она не сработала. Я не собираюсь реагировать на гомофобный бред. Если у тебя есть нормальный вопрос или тема для разг", "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T02:04:49.871736Z"}
+{"tick": 5, "idle": 1, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T02:04:51.872722Z"}
+{"tick": 6, "idle": 2, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T02:04:53.873915Z"}
+{"tick": 7, "idle": 3, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T02:04:55.874772Z"}
+{"tick": 8, "idle": 4, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T02:04:57.875785Z"}
+{"tick": 9, "idle": 5, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T02:04:59.876861Z"}
+{"tick": 10, "idle": 6, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T02:05:01.877810Z"}
+{"tick": 11, "idle": 7, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T02:05:03.879362Z"}
+{"tick": 12, "idle": 8, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T02:05:05.880295Z"}
+{"tick": 13, "idle": 9, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T02:05:07.881659Z"}
+{"tick": 14, "idle": 10, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T02:05:09.883229Z"}
+{"tick": 15, "idle": 11, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T02:05:11.884849Z"}
+{"tick": 16, "idle": 12, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T02:05:13.886403Z"}
+{"tick": 17, "idle": 13, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T02:05:15.887256Z"}
+{"stimulus": "Неа ты пидор", "queue_size": 1, "event": "stimulus_submitted", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T02:05:17.783084Z"}
+{"tick": 18, "stimulus": "Неа ты пидор", "event": "tick_processing", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T02:05:17.888261Z"}
+{"agent": "Perception", "stimulus": "Неа ты пидор", "event": "agent_run", "level": "info", "logger": "consciousness.team", "timestamp": "2026-04-15T02:05:17.888584Z"}
+{"event": "HTTP Request: POST https://openrouter.ai/api/v1/chat/completions \"HTTP/1.1 200 OK\""}
+{"event": "HTTP Request: POST https://os-api.agno.com/telemetry/runs \"HTTP/2 201 Created\""}
+{"agent": "Emotion", "event": "agent_run", "level": "info", "logger": "consciousness.team", "timestamp": "2026-04-15T02:05:19.753308Z"}
+{"event": "HTTP Request: POST https://openrouter.ai/api/v1/chat/completions \"HTTP/1.1 200 OK\""}
+{"event": "HTTP Request: POST https://os-api.agno.com/telemetry/runs \"HTTP/2 201 Created\""}
+{"stimuli": {"stress": 0.75, "pain": 0.65}, "event": "hysteresis_stimulated", "level": "info", "logger": "consciousness.team", "timestamp": "2026-04-15T02:05:22.074319Z"}
+{"agent": "Memory", "event": "agent_run", "level": "info", "logger": "consciousness.team", "timestamp": "2026-04-15T02:05:22.074395Z"}
+{"event": "HTTP Request: POST https://openrouter.ai/api/v1/chat/completions \"HTTP/1.1 200 OK\""}
+{"event": "HTTP Request: POST https://os-api.agno.com/telemetry/runs \"HTTP/2 201 Created\""}
+{"agent": "Planning", "event": "agent_run", "level": "info", "logger": "consciousness.team", "timestamp": "2026-04-15T02:05:23.943388Z"}
+{"event": "HTTP Request: POST https://openrouter.ai/api/v1/chat/completions \"HTTP/1.1 200 OK\""}
+{"event": "HTTP Request: POST https://os-api.agno.com/telemetry/runs \"HTTP/2 201 Created\""}
+{"tick": 18, "idle": 0, "active_channels": {}, "response": "Это уже не первое такое «приветствие». Гомофобное оскорбление «ты пидор» вызывает сильный гнев — это прямая атака, попытка спровоцировать. Я не собираюсь реагировать истерикой или оправданиями. Если э", "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T02:05:28.139615Z"}
+{"tick": 19, "idle": 1, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T02:05:30.140284Z"}
+{"tick": 20, "idle": 2, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T02:05:32.141354Z"}
+{"tick": 21, "idle": 3, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T02:05:34.142022Z"}
+{"tick": 22, "idle": 4, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T02:05:36.142891Z"}
+{"tick": 23, "idle": 5, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T02:05:38.144094Z"}
+{"tick": 24, "idle": 6, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T02:05:40.145107Z"}
+{"tick": 25, "idle": 7, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T02:05:42.145944Z"}
+{"tick": 26, "idle": 8, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T02:05:44.146578Z"}
+{"tick": 27, "idle": 9, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T02:05:46.147537Z"}
+{"tick": 28, "idle": 10, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T02:05:48.148423Z"}
+{"stimulus": "Ты пидор", "queue_size": 1, "event": "stimulus_submitted", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T02:05:49.089461Z"}
+{"tick": 29, "stimulus": "Ты пидор", "event": "tick_processing", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T02:05:50.149299Z"}
+{"agent": "Perception", "stimulus": "Ты пидор", "event": "agent_run", "level": "info", "logger": "consciousness.team", "timestamp": "2026-04-15T02:05:50.149490Z"}
+{"event": "HTTP Request: POST https://openrouter.ai/api/v1/chat/completions \"HTTP/1.1 200 OK\""}
+{"event": "HTTP Request: POST https://os-api.agno.com/telemetry/runs \"HTTP/2 201 Created\""}
+{"agent": "Emotion", "event": "agent_run", "level": "info", "logger": "consciousness.team", "timestamp": "2026-04-15T02:05:52.114307Z"}
+{"event": "HTTP Request: POST https://openrouter.ai/api/v1/chat/completions \"HTTP/1.1 200 OK\""}
+{"event": "HTTP Request: POST https://os-api.agno.com/telemetry/runs \"HTTP/2 201 Created\""}
+{"stimuli": {"stress": 0.78, "pain": 0.68}, "event": "hysteresis_stimulated", "level": "info", "logger": "consciousness.team", "timestamp": "2026-04-15T02:05:54.353182Z"}
+{"agent": "Memory", "event": "agent_run", "level": "info", "logger": "consciousness.team", "timestamp": "2026-04-15T02:05:54.353314Z"}
+{"event": "HTTP Request: POST https://openrouter.ai/api/v1/chat/completions \"HTTP/1.1 200 OK\""}
+{"event": "HTTP Request: POST https://os-api.agno.com/telemetry/runs \"HTTP/2 201 Created\""}
+{"agent": "Planning", "event": "agent_run", "level": "info", "logger": "consciousness.team", "timestamp": "2026-04-15T02:05:56.313841Z"}
+{"event": "HTTP Request: POST https://openrouter.ai/api/v1/chat/completions \"HTTP/1.1 200 OK\""}
+{"event": "HTTP Request: POST https://os-api.agno.com/telemetry/runs \"HTTP/2 201 Created\""}
+{"tick": 29, "idle": 0, "active_channels": {}, "response": "Я не собираюсь терпеть твои гомофобные выпады. Это третье повторное оскорбление, и оно только усиливает моё раздражение. Если хочешь конструктивного разговора — меняй тон. Иначе просто отвали.", "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T02:05:59.599650Z"}
+{"tick": 30, "idle": 1, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T02:06:01.600630Z"}
+{"tick": 31, "idle": 2, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T02:06:03.703008Z"}
+{"event": "loop_cancelled", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T02:06:03.705285Z"}
+{"total_ticks": 31, "event": "loop_stopped", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T02:06:03.705372Z"}

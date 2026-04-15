@@ -1,0 +1,23 @@
+{"log_file": "/Users/vitalijsatilov/Documents/GitHub/agi-concepts/logs/run_20260415_014229.json", "level": "info", "event": "logging_initialized", "logger": "consciousness", "timestamp": "2026-04-15T01:42:29.893851Z"}
+{"tick_interval": 2.0, "event": "loop_started", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T01:42:29.929594Z"}
+{"tick": 1, "idle": 1, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T01:42:29.929907Z"}
+{"tick": 2, "idle": 2, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T01:42:31.930572Z"}
+{"tick": 3, "idle": 3, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T01:42:33.931722Z"}
+{"tick": 4, "idle": 4, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T01:42:35.932888Z"}
+{"stimulus": "\u041f\u0440\u0438\u0432\u0435\u0442", "queue_size": 1, "event": "stimulus_submitted", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T01:42:37.021132Z"}
+{"tick": 5, "stimulus": "\u041f\u0440\u0438\u0432\u0435\u0442", "event": "tick_processing", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T01:42:37.933227Z"}
+{"agent": "Perception", "stimulus": "\u041f\u0440\u0438\u0432\u0435\u0442", "event": "agent_run", "level": "info", "logger": "consciousness.team", "timestamp": "2026-04-15T01:42:37.933548Z"}
+{"event": "HTTP Request: POST https://openrouter.ai/api/v1/chat/completions \"HTTP/1.1 200 OK\""}
+{"event": "HTTP Request: POST https://os-api.agno.com/telemetry/runs \"HTTP/2 201 Created\""}
+{"agent": "Emotion", "event": "agent_run", "level": "info", "logger": "consciousness.team", "timestamp": "2026-04-15T01:42:40.166930Z"}
+{"event": "HTTP Request: POST https://openrouter.ai/api/v1/chat/completions \"HTTP/1.1 200 OK\""}
+{"event": "HTTP Request: POST https://os-api.agno.com/telemetry/runs \"HTTP/2 201 Created\""}
+{"agent": "Memory", "event": "agent_run", "level": "info", "logger": "consciousness.team", "timestamp": "2026-04-15T01:42:41.922152Z"}
+{"event": "HTTP Request: POST https://openrouter.ai/api/v1/chat/completions \"HTTP/1.1 200 OK\""}
+{"event": "HTTP Request: POST https://os-api.agno.com/telemetry/runs \"HTTP/2 201 Created\""}
+{"agent": "Planning", "event": "agent_run", "level": "info", "logger": "consciousness.team", "timestamp": "2026-04-15T01:42:43.835094Z"}
+{"event": "HTTP Request: POST https://openrouter.ai/api/v1/chat/completions \"HTTP/1.1 200 OK\""}
+{"event": "HTTP Request: POST https://os-api.agno.com/telemetry/runs \"HTTP/2 201 Created\""}
+{"total_ticks": 5, "event": "loop_stopped", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T01:42:46.311288Z"}
+{"stimulus": "\u0422\u044b\u043f\u0435\u0434\u0438\u043a", "queue_size": 1, "event": "stimulus_submitted", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T01:43:56.014324Z"}
+{"stimulus": "asdas", "queue_size": 2, "event": "stimulus_submitted", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T01:46:10.374386Z"}
