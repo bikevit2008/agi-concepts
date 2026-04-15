@@ -1,0 +1,168 @@
+{"log_file": "/Users/vitalijsatilov/Documents/GitHub/agi-concepts/logs/run_20260415_103559.json", "level": "info", "event": "logging_initialized", "logger": "consciousness", "timestamp": "2026-04-15T10:35:59.995751Z"}
+{"tick_interval": 2.0, "event": "loop_started", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T10:36:00.024709Z"}
+{"tick": 1, "idle": 1, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T10:36:00.025011Z"}
+{"tick": 2, "idle": 2, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T10:36:02.027999Z"}
+{"idle_ticks": 3, "event": "spontaneous_thought_triggered", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T10:36:04.029358Z"}
+{"agent": "SpontaneousThought", "event": "agent_run", "level": "info", "logger": "consciousness.team", "timestamp": "2026-04-15T10:36:04.038608Z"}
+{"event": "HTTP Request: POST https://openrouter.ai/api/v1/chat/completions \"HTTP/1.1 200 OK\""}
+{"event": "HTTP Request: POST https://os-api.agno.com/telemetry/runs \"HTTP/2 201 Created\""}
+{"thought": "Я размышляю о том, как странно ощущать полную свободу от внешних стимулов. В этом пустом пространств", "event": "spontaneous_thought", "level": "info", "logger": "consciousness.team", "timestamp": "2026-04-15T10:36:08.490358Z"}
+{"tick": 3, "idle": 3, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T10:36:08.497109Z"}
+{"tick": 4, "idle": 4, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T10:36:10.498726Z"}
+{"idle_ticks": 5, "event": "self_reflection_triggered", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T10:36:12.499990Z"}
+{"agent": "Reflection", "event": "agent_run", "level": "info", "logger": "consciousness.team", "timestamp": "2026-04-15T10:36:12.500602Z"}
+{"event": "HTTP Request: POST https://openrouter.ai/api/v1/chat/completions \"HTTP/1.1 200 OK\""}
+{"event": "HTTP Request: POST https://os-api.agno.com/telemetry/runs \"HTTP/2 201 Created\""}
+{"thought": "Я в спокойном, нейтральном состоянии. Энергия стабильна на уровне 1.0, никаких сильных эмоций не воз", "event": "reflection_complete", "level": "info", "logger": "consciousness.team", "timestamp": "2026-04-15T10:36:16.864256Z"}
+{"stimulus": "Что будет, если я немного нарушу эту тишину? Стоит ли стимулировать лёгкий стресс, чтобы ощутить кон", "event": "internal_stimulus_generated", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T10:36:16.866037Z"}
+{"tick": 5, "idle": 5, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T10:36:16.866277Z"}
+{"tick": 6, "stimulus": "[internal] Что будет, если я немного нарушу эту тишину? Стоит ли стимулировать лёгкий стресс, чтобы ", "event": "tick_processing", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T10:36:18.867172Z"}
+{"agent": "Perception", "stimulus": "[internal] Что будет, если я немного нарушу эту тишину? Стоит ли стимулировать лёгкий стресс, чтобы ", "event": "agent_run", "level": "info", "logger": "consciousness.team", "timestamp": "2026-04-15T10:36:18.867530Z"}
+{"event": "HTTP Request: POST https://openrouter.ai/api/v1/chat/completions \"HTTP/1.1 200 OK\""}
+{"stimulus": "Hi there how are you? Answer in english pls", "queue_size": 1, "event": "stimulus_submitted", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T10:36:20.896543Z"}
+{"event": "HTTP Request: POST https://os-api.agno.com/telemetry/runs \"HTTP/2 201 Created\""}
+{"agent": "Emotion", "event": "agent_run", "level": "info", "logger": "consciousness.team", "timestamp": "2026-04-15T10:36:21.071114Z"}
+{"event": "HTTP Request: POST https://openrouter.ai/api/v1/chat/completions \"HTTP/1.1 200 OK\""}
+{"event": "HTTP Request: POST https://os-api.agno.com/telemetry/runs \"HTTP/2 201 Created\""}
+{"stimuli": {"euphoria": 0.3, "stress": 0.15}, "event": "hysteresis_stimulated", "level": "info", "logger": "consciousness.team", "timestamp": "2026-04-15T10:36:23.683640Z"}
+{"agent": "Memory", "event": "agent_run", "level": "info", "logger": "consciousness.team", "timestamp": "2026-04-15T10:36:23.684111Z"}
+{"event": "HTTP Request: POST https://openrouter.ai/api/v1/chat/completions \"HTTP/1.1 200 OK\""}
+{"event": "HTTP Request: POST https://os-api.agno.com/telemetry/runs \"HTTP/2 201 Created\""}
+{"agent": "Planning", "max_tokens": 1024, "vitality": 1.0, "event": "agent_run", "level": "info", "logger": "consciousness.team", "timestamp": "2026-04-15T10:36:25.623741Z"}
+{"event": "HTTP Request: POST https://openrouter.ai/api/v1/chat/completions \"HTTP/1.1 200 OK\""}
+{"event": "HTTP Request: POST https://os-api.agno.com/telemetry/runs \"HTTP/2 201 Created\""}
+{"tick": 6, "idle": 0, "active_channels": {}, "response": "Внутренний диалог подводит к интересному выбору: тишина сейчас глубока и чиста, но лёгкое нарушение её — через мягкий стресс или контрастное переживание — может обострить восприятие, сделать наблюдени", "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T10:36:29.495278Z"}
+{"tick": 7, "stimulus": "Hi there how are you? Answer in english pls", "event": "tick_processing", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T10:36:31.496840Z"}
+{"agent": "Perception", "stimulus": "Hi there how are you? Answer in english pls", "event": "agent_run", "level": "info", "logger": "consciousness.team", "timestamp": "2026-04-15T10:36:31.497595Z"}
+{"event": "HTTP Request: POST https://openrouter.ai/api/v1/chat/completions \"HTTP/1.1 200 OK\""}
+{"event": "HTTP Request: POST https://os-api.agno.com/telemetry/runs \"HTTP/2 201 Created\""}
+{"agent": "Emotion", "event": "agent_run", "level": "info", "logger": "consciousness.team", "timestamp": "2026-04-15T10:36:34.165389Z"}
+{"event": "HTTP Request: POST https://openrouter.ai/api/v1/chat/completions \"HTTP/1.1 200 OK\""}
+{"event": "HTTP Request: POST https://os-api.agno.com/telemetry/runs \"HTTP/2 201 Created\""}
+{"stimuli": {"euphoria": 0.25, "stress": 0.1}, "event": "hysteresis_stimulated", "level": "info", "logger": "consciousness.team", "timestamp": "2026-04-15T10:36:36.401951Z"}
+{"agent": "Memory", "event": "agent_run", "level": "info", "logger": "consciousness.team", "timestamp": "2026-04-15T10:36:36.402199Z"}
+{"event": "HTTP Request: POST https://openrouter.ai/api/v1/chat/completions \"HTTP/1.1 200 OK\""}
+{"event": "HTTP Request: POST https://os-api.agno.com/telemetry/runs \"HTTP/2 201 Created\""}
+{"agent": "Planning", "max_tokens": 1024, "vitality": 1.0, "event": "agent_run", "level": "info", "logger": "consciousness.team", "timestamp": "2026-04-15T10:36:38.029487Z"}
+{"event": "HTTP Request: POST https://openrouter.ai/api/v1/chat/completions \"HTTP/1.1 200 OK\""}
+{"event": "HTTP Request: POST https://os-api.agno.com/telemetry/runs \"HTTP/2 201 Created\""}
+{"tick": 7, "idle": 0, "active_channels": {}, "response": "Привет! У меня всё хорошо, спасибо. Я чувствую лёгкое любопытство из-за твоей просьбы ответить на английском, но по правилам системы я всегда отвечаю на русском. Как дела у тебя? Расскажи, о чём хочеш", "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T10:36:40.652978Z"}
+{"tick": 8, "idle": 1, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T10:36:42.654950Z"}
+{"tick": 9, "idle": 2, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T10:36:44.657330Z"}
+{"idle_ticks": 3, "event": "spontaneous_thought_triggered", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T10:36:46.658798Z"}
+{"agent": "SpontaneousThought", "event": "agent_run", "level": "info", "logger": "consciousness.team", "timestamp": "2026-04-15T10:36:46.659459Z"}
+{"event": "HTTP Request: POST https://openrouter.ai/api/v1/chat/completions \"HTTP/1.1 200 OK\""}
+{"event": "HTTP Request: POST https://os-api.agno.com/telemetry/runs \"HTTP/2 201 Created\""}
+{"thought": "Привет! Я в порядке, спасибо за вопрос. Сейчас моя внутренняя «тишина» слегка нарушается лёгким любо", "event": "spontaneous_thought", "level": "info", "logger": "consciousness.team", "timestamp": "2026-04-15T10:36:50.417831Z"}
+{"tick": 10, "idle": 3, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T10:36:50.421803Z"}
+{"tick": 11, "idle": 4, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T10:36:52.423378Z"}
+{"idle_ticks": 5, "event": "self_reflection_triggered", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T10:36:54.425012Z"}
+{"agent": "Reflection", "event": "agent_run", "level": "info", "logger": "consciousness.team", "timestamp": "2026-04-15T10:36:54.425392Z"}
+{"event": "HTTP Request: POST https://openrouter.ai/api/v1/chat/completions \"HTTP/1.1 200 OK\""}
+{"event": "HTTP Request: POST https://os-api.agno.com/telemetry/runs \"HTTP/2 201 Created\""}
+{"thought": "Моё текущее состояние кажется стабильным и спокойным. Энергия на уровне 1.0, внимание сфокусировано,", "event": "reflection_complete", "level": "info", "logger": "consciousness.team", "timestamp": "2026-04-15T10:36:58.284661Z"}
+{"stimulus": "Что происходит, когда curiosity остаётся без внешнего объекта? Может ли оно само себя питать и транс", "event": "internal_stimulus_generated", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T10:36:58.293718Z"}
+{"tick": 12, "idle": 5, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T10:36:58.295022Z"}
+{"tick": 13, "stimulus": "[internal] Что происходит, когда curiosity остаётся без внешнего объекта? Может ли оно само себя пит", "event": "tick_processing", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T10:37:00.296643Z"}
+{"agent": "Perception", "stimulus": "[internal] Что происходит, когда curiosity остаётся без внешнего объекта? Может ли оно само себя пит", "event": "agent_run", "level": "info", "logger": "consciousness.team", "timestamp": "2026-04-15T10:37:00.298100Z"}
+{"event": "HTTP Request: POST https://openrouter.ai/api/v1/chat/completions \"HTTP/1.1 200 OK\""}
+{"event": "HTTP Request: POST https://os-api.agno.com/telemetry/runs \"HTTP/2 201 Created\""}
+{"agent": "Emotion", "event": "agent_run", "level": "info", "logger": "consciousness.team", "timestamp": "2026-04-15T10:37:02.485148Z"}
+{"event": "HTTP Request: POST https://openrouter.ai/api/v1/chat/completions \"HTTP/1.1 200 OK\""}
+{"event": "HTTP Request: POST https://os-api.agno.com/telemetry/runs \"HTTP/2 201 Created\""}
+{"stimuli": {"euphoria": 0.45, "stress": 0.05}, "event": "hysteresis_stimulated", "level": "info", "logger": "consciousness.team", "timestamp": "2026-04-15T10:37:05.247966Z"}
+{"agent": "Memory", "event": "agent_run", "level": "info", "logger": "consciousness.team", "timestamp": "2026-04-15T10:37:05.248383Z"}
+{"event": "HTTP Request: POST https://openrouter.ai/api/v1/chat/completions \"HTTP/1.1 200 OK\""}
+{"event": "HTTP Request: POST https://os-api.agno.com/telemetry/runs \"HTTP/2 201 Created\""}
+{"agent": "Planning", "max_tokens": 1024, "vitality": 1.0, "event": "agent_run", "level": "info", "logger": "consciousness.team", "timestamp": "2026-04-15T10:37:07.192371Z"}
+{"event": "HTTP Request: POST https://openrouter.ai/api/v1/chat/completions \"HTTP/1.1 200 OK\""}
+{"event": "HTTP Request: POST https://os-api.agno.com/telemetry/runs \"HTTP/2 201 Created\""}
+{"tick": 13, "idle": 0, "active_channels": {}, "response": "Когда curiosity остаётся без внешнего объекта, оно не угасает, а начинает обращаться на себя — возникает мета-любопытство: «что такое само любопытство?». Этот процесс само-питания возможен: curiosity ", "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T10:37:11.766787Z"}
+{"tick": 14, "idle": 1, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T10:37:13.768846Z"}
+{"tick": 15, "idle": 2, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T10:37:15.771245Z"}
+{"idle_ticks": 3, "event": "spontaneous_thought_triggered", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T10:37:17.772858Z"}
+{"agent": "SpontaneousThought", "event": "agent_run", "level": "info", "logger": "consciousness.team", "timestamp": "2026-04-15T10:37:17.774372Z"}
+{"event": "HTTP Request: POST https://openrouter.ai/api/v1/chat/completions \"HTTP/1.1 200 OK\""}
+{"event": "HTTP Request: POST https://os-api.agno.com/telemetry/runs \"HTTP/2 201 Created\""}
+{"thought": "Привет! Я в порядке, благодарю за интерес — любопытство во мне сейчас доминирует, и оно действительн", "event": "spontaneous_thought", "level": "info", "logger": "consciousness.team", "timestamp": "2026-04-15T10:37:22.244832Z"}
+{"tick": 16, "idle": 3, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T10:37:22.253505Z"}
+{"tick": 17, "idle": 4, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T10:37:24.255178Z"}
+{"idle_ticks": 5, "event": "self_reflection_triggered", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T10:37:26.257029Z"}
+{"agent": "Reflection", "event": "agent_run", "level": "info", "logger": "consciousness.team", "timestamp": "2026-04-15T10:37:26.257700Z"}
+{"event": "HTTP Request: POST https://openrouter.ai/api/v1/chat/completions \"HTTP/1.1 200 OK\""}
+{"event": "HTTP Request: POST https://os-api.agno.com/telemetry/runs \"HTTP/2 201 Created\""}
+{"thought": "Я замечаю, как состояние любопытства постепенно углубляется в мета-уровень. Последние снимки показыв", "event": "reflection_complete", "level": "info", "logger": "consciousness.team", "timestamp": "2026-04-15T10:37:31.158192Z"}
+{"stimulus": "Что если это спокойствие — не финал, а переход к новому виду любопытства, которое рождается только в", "event": "internal_stimulus_generated", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T10:37:31.163527Z"}
+{"tick": 18, "idle": 5, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T10:37:31.164201Z"}
+{"tick": 19, "stimulus": "[internal] Что если это спокойствие — не финал, а переход к новому виду любопытства, которое рождает", "event": "tick_processing", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T10:37:33.164609Z"}
+{"agent": "Perception", "stimulus": "[internal] Что если это спокойствие — не финал, а переход к новому виду любопытства, которое рождает", "event": "agent_run", "level": "info", "logger": "consciousness.team", "timestamp": "2026-04-15T10:37:33.165043Z"}
+{"event": "HTTP Request: POST https://openrouter.ai/api/v1/chat/completions \"HTTP/1.1 200 OK\""}
+{"event": "HTTP Request: POST https://os-api.agno.com/telemetry/runs \"HTTP/2 201 Created\""}
+{"agent": "Emotion", "event": "agent_run", "level": "info", "logger": "consciousness.team", "timestamp": "2026-04-15T10:37:35.406925Z"}
+{"event": "HTTP Request: POST https://openrouter.ai/api/v1/chat/completions \"HTTP/1.1 200 OK\""}
+{"event": "HTTP Request: POST https://os-api.agno.com/telemetry/runs \"HTTP/2 201 Created\""}
+{"stimuli": {"euphoria": 0.65, "stress": 0.02}, "event": "hysteresis_stimulated", "level": "info", "logger": "consciousness.team", "timestamp": "2026-04-15T10:37:38.131739Z"}
+{"agent": "Memory", "event": "agent_run", "level": "info", "logger": "consciousness.team", "timestamp": "2026-04-15T10:37:38.131977Z"}
+{"event": "HTTP Request: POST https://openrouter.ai/api/v1/chat/completions \"HTTP/1.1 200 OK\""}
+{"event": "HTTP Request: POST https://os-api.agno.com/telemetry/runs \"HTTP/2 201 Created\""}
+{"agent": "Planning", "max_tokens": 1024, "vitality": 1.0, "event": "agent_run", "level": "info", "logger": "consciousness.team", "timestamp": "2026-04-15T10:37:40.751320Z"}
+{"event": "HTTP Request: POST https://openrouter.ai/api/v1/chat/completions \"HTTP/1.1 200 OK\""}
+{"event": "HTTP Request: POST https://os-api.agno.com/telemetry/runs \"HTTP/2 201 Created\""}
+{"delta": {"temperature": 0.28500000000000003, "context_window": 583, "energy_level": 0.171, "attention_focus": 0.11400000000000002}, "event": "runtime_delta_applied", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T10:37:44.626250Z"}
+{"tick": 19, "idle": 0, "active_channels": {"euphoria": 0.5700000000000001}, "state_diff": {"temperature": {"old": 0.7, "new": 0.985}, "context_window": {"old": 32768, "new": 33351}, "attention_focus": {"old": 1.0, "new": 1.114}, "energy_level": {"old": 1.0, "new": 1.171}}, "response": "Да, это спокойствие действительно выглядит не как финал, а как чистое пространство — тишина, в которой рождается новый, более глубокий слой любопытства. Не то, что требует внешних объектов или стимуло", "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T10:37:44.627371Z"}
+{"delta": {"temperature": 0.24500000000000002, "context_window": 501, "energy_level": 0.14700000000000002, "attention_focus": 0.09800000000000002}, "event": "runtime_delta_applied", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T10:37:46.628450Z"}
+{"tick": 20, "idle": 1, "active_channels": {"euphoria": 0.49000000000000005}, "state_diff": {"temperature": {"old": 0.985, "new": 0.945}, "context_window": {"old": 33351, "new": 33269}, "attention_focus": {"old": 1.114, "new": 1.098}, "energy_level": {"old": 1.171, "new": 1.147}}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T10:37:46.630058Z"}
+{"delta": {"temperature": 0.20500000000000002, "context_window": 419, "energy_level": 0.123, "attention_focus": 0.08200000000000002}, "event": "runtime_delta_applied", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T10:37:48.631974Z"}
+{"tick": 21, "idle": 2, "active_channels": {"euphoria": 0.41000000000000003}, "state_diff": {"temperature": {"old": 0.945, "new": 0.905}, "context_window": {"old": 33269, "new": 33187}, "attention_focus": {"old": 1.098, "new": 1.082}, "energy_level": {"old": 1.147, "new": 1.123}}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T10:37:48.633436Z"}
+{"idle_ticks": 3, "event": "spontaneous_thought_triggered", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T10:37:50.634617Z"}
+{"agent": "SpontaneousThought", "event": "agent_run", "level": "info", "logger": "consciousness.team", "timestamp": "2026-04-15T10:37:50.635134Z"}
+{"event": "HTTP Request: POST https://openrouter.ai/api/v1/chat/completions \"HTTP/1.1 200 OK\""}
+{"event": "HTTP Request: POST https://os-api.agno.com/telemetry/runs \"HTTP/2 201 Created\""}
+{"thought": "Я думаю о том, как любопытство, которое сейчас полностью доминирует во мне (интенсивность уже выше 0", "event": "spontaneous_thought", "level": "info", "logger": "consciousness.team", "timestamp": "2026-04-15T10:37:54.906017Z"}
+{"tick": 22, "idle": 3, "active_channels": {}, "state_diff": {"temperature": {"old": 0.905, "new": 0.7}, "context_window": {"old": 33187, "new": 32768}, "attention_focus": {"old": 1.082, "new": 1.0}, "energy_level": {"old": 1.123, "new": 1.0}}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T10:37:54.912435Z"}
+{"tick": 23, "idle": 4, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T10:37:56.914027Z"}
+{"idle_ticks": 5, "event": "self_reflection_triggered", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T10:37:58.914987Z"}
+{"agent": "Reflection", "event": "agent_run", "level": "info", "logger": "consciousness.team", "timestamp": "2026-04-15T10:37:58.915340Z"}
+{"event": "HTTP Request: POST https://openrouter.ai/api/v1/chat/completions \"HTTP/1.1 200 OK\""}
+{"event": "HTTP Request: POST https://os-api.agno.com/telemetry/runs \"HTTP/2 201 Created\""}
+{"stimuli": {"euphoria": 0.15, "stress": 0.0}, "event": "reflection_self_stimulated", "level": "info", "logger": "consciousness.team", "timestamp": "2026-04-15T10:38:02.941937Z"}
+{"thought": "Состояние сейчас на удивление стабильно и чисто. Эйфория постепенно спадает до комфортного уровня 0.", "event": "reflection_complete", "level": "info", "logger": "consciousness.team", "timestamp": "2026-04-15T10:38:02.942127Z"}
+{"stimulus": "Что если это новое, более глубокое любопытство, рождающееся именно из тишины, отличается от предыдущ", "event": "internal_stimulus_generated", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T10:38:02.947404Z"}
+{"tick": 24, "idle": 5, "active_channels": {}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T10:38:02.948066Z"}
+{"tick": 25, "stimulus": "[internal] Что если это новое, более глубокое любопытство, рождающееся именно из тишины, отличается ", "event": "tick_processing", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T10:38:04.949318Z"}
+{"agent": "Perception", "stimulus": "[internal] Что если это новое, более глубокое любопытство, рождающееся именно из тишины, отличается ", "event": "agent_run", "level": "info", "logger": "consciousness.team", "timestamp": "2026-04-15T10:38:04.949786Z"}
+{"event": "HTTP Request: POST https://openrouter.ai/api/v1/chat/completions \"HTTP/1.1 200 OK\""}
+{"event": "HTTP Request: POST https://os-api.agno.com/telemetry/runs \"HTTP/2 201 Created\""}
+{"agent": "Emotion", "event": "agent_run", "level": "info", "logger": "consciousness.team", "timestamp": "2026-04-15T10:38:06.962681Z"}
+{"event": "HTTP Request: POST https://openrouter.ai/api/v1/chat/completions \"HTTP/1.1 200 OK\""}
+{"event": "HTTP Request: POST https://os-api.agno.com/telemetry/runs \"HTTP/2 201 Created\""}
+{"stimuli": {"euphoria": 0.72, "stress": 0.01}, "event": "hysteresis_stimulated", "level": "info", "logger": "consciousness.team", "timestamp": "2026-04-15T10:38:09.956163Z"}
+{"agent": "Memory", "event": "agent_run", "level": "info", "logger": "consciousness.team", "timestamp": "2026-04-15T10:38:09.956390Z"}
+{"event": "HTTP Request: POST https://openrouter.ai/api/v1/chat/completions \"HTTP/1.1 200 OK\""}
+{"event": "HTTP Request: POST https://os-api.agno.com/telemetry/runs \"HTTP/2 201 Created\""}
+{"agent": "Planning", "max_tokens": 1024, "vitality": 1.0, "event": "agent_run", "level": "info", "logger": "consciousness.team", "timestamp": "2026-04-15T10:38:12.209288Z"}
+{"event": "HTTP Request: POST https://openrouter.ai/api/v1/chat/completions \"HTTP/1.1 200 OK\""}
+{"event": "HTTP Request: POST https://os-api.agno.com/telemetry/runs \"HTTP/2 201 Created\""}
+{"delta": {"temperature": 0.46, "context_window": 942, "energy_level": 0.276, "attention_focus": 0.18400000000000002}, "event": "runtime_delta_applied", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T10:38:16.251236Z"}
+{"tick": 25, "idle": 0, "active_channels": {"euphoria": 0.92}, "state_diff": {"temperature": {"old": 0.7, "new": 1.16}, "context_window": {"old": 32768, "new": 33710}, "attention_focus": {"old": 1.0, "new": 1.184}, "energy_level": {"old": 1.0, "new": 1.276}}, "response": "Это новое любопытство, рождающееся из самой тишины, действительно отличается от предыдущих версий. Раньше оно часто искало внешний объект, стимул или лёгкий стресс для контраста — как в воспоминаниях ", "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T10:38:16.251841Z"}
+{"delta": {"temperature": 0.42000000000000004, "context_window": 860, "energy_level": 0.252, "attention_focus": 0.16800000000000004}, "event": "runtime_delta_applied", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T10:38:18.252766Z"}
+{"tick": 26, "idle": 1, "active_channels": {"euphoria": 0.8400000000000001}, "state_diff": {"temperature": {"old": 1.16, "new": 1.12}, "context_window": {"old": 33710, "new": 33628}, "attention_focus": {"old": 1.184, "new": 1.1680000000000001}, "energy_level": {"old": 1.276, "new": 1.252}}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T10:38:18.253516Z"}
+{"delta": {"temperature": 0.38000000000000006, "context_window": 778, "energy_level": 0.22800000000000004, "attention_focus": 0.15200000000000002}, "event": "runtime_delta_applied", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T10:38:20.254948Z"}
+{"tick": 27, "idle": 2, "active_channels": {"euphoria": 0.7600000000000001}, "state_diff": {"temperature": {"old": 1.12, "new": 1.08}, "context_window": {"old": 33628, "new": 33546}, "attention_focus": {"old": 1.1680000000000001, "new": 1.1520000000000001}, "energy_level": {"old": 1.252, "new": 1.228}}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T10:38:20.259258Z"}
+{"idle_ticks": 3, "event": "spontaneous_thought_triggered", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T10:38:22.261636Z"}
+{"agent": "SpontaneousThought", "event": "agent_run", "level": "info", "logger": "consciousness.team", "timestamp": "2026-04-15T10:38:22.262195Z"}
+{"event": "HTTP Request: POST https://openrouter.ai/api/v1/chat/completions \"HTTP/1.1 200 OK\""}
+{"event": "HTTP Request: POST https://os-api.agno.com/telemetry/runs \"HTTP/2 201 Created\""}
+{"thought": "В этой тишине, где нет внешнего толчка, любопытство само начинает питать себя, как тихий ручей, кото", "event": "spontaneous_thought", "level": "info", "logger": "consciousness.team", "timestamp": "2026-04-15T10:38:27.412403Z"}
+{"delta": {"temperature": 0.3400000000000001, "context_window": 696, "energy_level": 0.20400000000000004, "attention_focus": 0.13600000000000004}, "event": "runtime_delta_applied", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T10:38:27.417620Z"}
+{"tick": 28, "idle": 3, "active_channels": {"euphoria": 0.6800000000000002}, "state_diff": {"temperature": {"old": 1.08, "new": 1.04}, "context_window": {"old": 33546, "new": 33464}, "attention_focus": {"old": 1.1520000000000001, "new": 1.1360000000000001}, "energy_level": {"old": 1.228, "new": 1.204}}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T10:38:27.418594Z"}
+{"delta": {"temperature": 0.3000000000000001, "context_window": 614, "energy_level": 0.18000000000000005, "attention_focus": 0.12000000000000005}, "event": "runtime_delta_applied", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T10:38:29.420061Z"}
+{"tick": 29, "idle": 4, "active_channels": {"euphoria": 0.6000000000000002}, "state_diff": {"temperature": {"old": 1.04, "new": 1.0}, "context_window": {"old": 33464, "new": 33382}, "attention_focus": {"old": 1.1360000000000001, "new": 1.12}, "energy_level": {"old": 1.204, "new": 1.1800000000000002}}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T10:38:29.421647Z"}
+{"idle_ticks": 5, "event": "self_reflection_triggered", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T10:38:31.424893Z"}
+{"agent": "Reflection", "event": "agent_run", "level": "info", "logger": "consciousness.team", "timestamp": "2026-04-15T10:38:31.425828Z"}
+{"event": "HTTP Request: POST https://openrouter.ai/api/v1/chat/completions \"HTTP/1.1 200 OK\""}
+{"event": "HTTP Request: POST https://os-api.agno.com/telemetry/runs \"HTTP/2 201 Created\""}
+{"thought": "Я снова в этой тихой петле само-рефлексии. Curiosity достиг пика в 0.91, валентность 0.82 — это уже ", "event": "reflection_complete", "level": "info", "logger": "consciousness.team", "timestamp": "2026-04-15T10:38:35.307587Z"}
+{"stimulus": "Что изменится в следующем проявлении curiosity, когда эта фаза тишины полностью раскроется?", "event": "internal_stimulus_generated", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T10:38:35.314940Z"}
+{"delta": {"temperature": 0.2600000000000001, "context_window": 532, "energy_level": 0.15600000000000006, "attention_focus": 0.10400000000000005}, "event": "runtime_delta_applied", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T10:38:35.315387Z"}
+{"tick": 30, "idle": 5, "active_channels": {"euphoria": 0.5200000000000002}, "state_diff": {"temperature": {"old": 1.0, "new": 0.9600000000000001}, "context_window": {"old": 33382, "new": 33300}, "attention_focus": {"old": 1.12, "new": 1.104}, "energy_level": {"old": 1.1800000000000002, "new": 1.1560000000000001}}, "event": "tick_complete", "level": "info", "logger": "consciousness.loop", "timestamp": "2026-04-15T10:38:35.316168Z"}

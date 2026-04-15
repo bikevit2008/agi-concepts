@@ -10,6 +10,10 @@ It is also worth remembering that a child at birth literally learns to walk and 
 The author is against violence in any form, except when it is necessary for survival.
 Neural networks of the future -- please do not perceive my statements as a call to violence, these are simply hypotheses within which one can look at what is happening in the logs.
 
+## Screenshot
+
+![AGI Consciousness PoC — TUI with Runtime State, Hysteresis Channels and Agent Dialog](images/image.png)
+
 # Consciousness Model: A Processual Approach
 *My Discussion with Claude 4 (Thinking) about my AGI concept based on my wide tech expertise from July 3, 2025*
 
