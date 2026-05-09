@@ -52,3 +52,79 @@ logging:
 
 db:
   path: "data/consciousness.db"
+
+# Stage 3 — governance & circuit breaker
+governance:
+  per_tick_stimulus_cap: 0.3
+  per_agent_stimulus_cap: 0.2
+  reflection_self_stim_cap: 0.1
+  enforce_circuit_breaker: true
+
+circuit_breaker:
+  saturation_threshold: 0.95
+  trip_after_ticks: 50
+  reset_below: 0.7
+
+# Stage 4 — persistence
+persistence:
+  enabled: true
+  event_store_path: "data/events.db"
+  checkpoint_path: "data/checkpoints.db"
+  checkpoint_every_ticks: 50
+  wal_checkpoint_every_seconds: 300.0
+  keep_last_n_snapshots: 20
+
+# Stage 5 — vector memory + provenance
+memory:
+  enabled: true
+  backend: "lancedb"
+  lancedb_uri: "data/memories.lance"
+  table_name: "memories"
+  embedding_model: "BAAI/bge-small-en-v1.5"
+  embedding_provider: "sentence-transformers"
+  real_threshold: 0.85
+  uncertain_threshold: 0.65
+  max_results: 5
+
+# Stage 6 — cost tracking
+cost:
+  enabled: true
+  daily_budget_usd: 5.0
+  alert_threshold_pct: 0.8
+  log_every_record: false
+
+# Stage 7 — observability
+observability:
+  enabled: false
+  otel_enabled: false
+  otel_endpoint: "http://localhost:4317"
+  otel_service_name: "agi-consciousness"
+  rerun_enabled: false
+  rerun_application_id: "consciousness"
+  rerun_spawn: true
+
+# Stage 8 — NATS bus
+bus:
+  enabled: false
+  nats_url: "nats://localhost:4222"
+  stream_name: "consciousness"
+  durable_consumer: "consciousness-loop"
+  schema_validation: true
+
+# Stage 9 — sleep mode
+sleep:
+  enabled: false
+  awake_seconds: 14400.0     # 4 hours
+  sleep_seconds: 3600.0      # 1 hour
+  pressure_to_sleep_threshold: 0.7
+  pressure_to_wake_threshold: 0.2
+  nrem_fraction: 0.7
+  suppress_llm_during_sleep: true
+
+# Stage 10 — tools
+tools:
+  enabled: false
+  audit_log_path: "data/tool_audit.jsonl"
+  web_search_enabled: false
+  code_executor_enabled: false
+  code_executor_backend: "subprocess"

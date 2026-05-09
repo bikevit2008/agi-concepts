@@ -22,3 +22,33 @@ internal_stimulus_enabled: true
 emotion_affects_temperature: true
 stress_narrows_context: true
 pain_reduces_bandwidth: true
+
+# Stage 3 -- governance & circuit breaker
+governance_enabled: true
+circuit_breaker_enabled: true
+
+# Stage 4 -- persistence
+persistence_enabled: true
+
+# Stage 5 -- vector memory + provenance
+memory_store_enabled: true
+provenance_tracking_enabled: true
+
+# Stage 6 -- cost tracking + model fallback
+cost_tracking_enabled: true
+model_fallback_enabled: true
+
+# Stage 7 -- observability (off by default)
+observability_enabled: false
+rerun_enabled: false
+otel_enabled: false
+
+# Stage 8 -- NATS bus (off by default)
+nats_bus_enabled: false
+
+# Stage 9 -- sleep mode (off by default)
+sleep_mode_enabled: false
+memory_consolidation_enabled: false
+
+# Stage 10 -- tools (off by default)
+tools_enabled: false

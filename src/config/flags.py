@@ -37,6 +37,36 @@ class FeatureFlags:
     stress_narrows_context: bool = True
     pain_reduces_bandwidth: bool = True
 
+    # Stage 3 — governance & circuit breaker
+    governance_enabled: bool = True
+    circuit_breaker_enabled: bool = True
+
+    # Stage 4 — persistence
+    persistence_enabled: bool = True
+
+    # Stage 5 — vector memory + provenance
+    memory_store_enabled: bool = True
+    provenance_tracking_enabled: bool = True
+
+    # Stage 6 — cost tracking + model fallback
+    cost_tracking_enabled: bool = True
+    model_fallback_enabled: bool = True
+
+    # Stage 7 — observability
+    observability_enabled: bool = False  # off by default
+    rerun_enabled: bool = False
+    otel_enabled: bool = False
+
+    # Stage 8 — NATS bus
+    nats_bus_enabled: bool = False
+
+    # Stage 9 — sleep mode
+    sleep_mode_enabled: bool = False
+    memory_consolidation_enabled: bool = False
+
+    # Stage 10 — tools
+    tools_enabled: bool = False
+
     @classmethod
     def from_yaml(cls, path: str | Path) -> FeatureFlags:
         path = Path(path)

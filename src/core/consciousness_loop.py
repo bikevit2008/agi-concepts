@@ -10,6 +10,14 @@ import structlog
 
 from src.config.flags import FeatureFlags
 from src.config.settings import RuntimeDefaults, Settings
+from src.contracts.governance import (
+    GovernanceDecision,
+    ICircuitBreaker,
+    IGovernanceKernel,
+    NullCircuitBreaker,
+    NullGovernanceKernel,
+    StimulationRequest,
+)
 from src.core.event_bus import EventBus, EventType
 from src.core.hysteresis import HysteresisEngine
 from src.core.runtime_state import RuntimeState
@@ -17,6 +25,36 @@ from src.engine.homeostatic_hysteresis import HomeostaticHysteresisEngine
 from src.team.consciousness_team import ConsciousnessTeam
 
 logger = structlog.get_logger("consciousness.loop")
+
+
+def gated_stimulate(
+    hysteresis: HysteresisEngine | HomeostaticHysteresisEngine,
+    governance: IGovernanceKernel,
+    agent: str,
+    channel: str,
+    intensity: float,
+    tick: int,
+    reason: Optional[str] = None,
+) -> GovernanceDecision:
+    """Apply a stimulation request through the governance kernel.
+
+    This is the only sanctioned path for any subsystem to mutate hysteresis
+    state. The kernel decides allow/deny, and only on ALLOW does the
+    stimulation actually hit the engine. Records the decision either way
+    so per-tick aggregations are accurate.
+    """
+    request = StimulationRequest(
+        agent=agent,
+        channel=channel,
+        intensity=intensity,
+        tick=tick,
+        reason=reason,
+    )
+    decision = governance.authorize(request)
+    if decision == GovernanceDecision.ALLOW:
+        hysteresis.stimulate(channel, intensity)
+        governance.record(request)
+    return decision
 
 
 @dataclass
@@ -47,6 +85,10 @@ class ConsciousnessLoop:
     hysteresis: HysteresisEngine | HomeostaticHysteresisEngine
     event_bus: EventBus
     team: ConsciousnessTeam
+
+    # Stage 3 — governance & circuit breaker (Null implementations by default)
+    governance: IGovernanceKernel = field(default_factory=NullGovernanceKernel)
+    circuit_breaker: ICircuitBreaker = field(default_factory=NullCircuitBreaker)
 
     # Internal
     _tick_count: int = 0
@@ -126,6 +168,13 @@ class ConsciousnessLoop:
         # guard against negative dt (clock edge case)
         dt = max(0.0, min(dt, 5.0 * self.settings.consciousness_loop.tick_interval_sec))
         self._last_tick_time = now
+
+        # Stage 3 — begin governance window for this tick
+        if self.flags.governance_enabled:
+            self.governance.begin_tick(self._tick_count)
+
+        # Make tick number visible to the team for governance traceability
+        self.team.current_tick = self._tick_count
 
         # Check for stimulus
         stimulus: Optional[str] = None
@@ -214,25 +263,67 @@ class ConsciousnessLoop:
         if self.flags.feedback_loops_enabled:
             # Low energy → fatigue builds
             if self.runtime_state.energy_level < 0.5:
-                self.hysteresis.stimulate("fatigue", 0.15 * (1.0 - self.runtime_state.energy_level))
+                gated_stimulate(
+                    self.hysteresis,
+                    self.governance,
+                    agent="FeedbackLoop",
+                    channel="fatigue",
+                    intensity=0.15 * (1.0 - self.runtime_state.energy_level),
+                    tick=self._tick_count,
+                    reason="low_energy",
+                )
             # Fragmented attention → stress builds
             if self.runtime_state.attention_focus < 0.6:
-                self.hysteresis.stimulate("stress", 0.1 * (1.0 - self.runtime_state.attention_focus))
+                gated_stimulate(
+                    self.hysteresis,
+                    self.governance,
+                    agent="FeedbackLoop",
+                    channel="stress",
+                    intensity=0.1 * (1.0 - self.runtime_state.attention_focus),
+                    tick=self._tick_count,
+                    reason="fragmented_attention",
+                )
 
             # Cross-channel cascades (like real consciousness):
             # Prolonged stress → burnout (fatigue)
             stress_ch = self.hysteresis.channels.get("stress")
             if stress_ch and stress_ch.value > 0.6:
-                self.hysteresis.stimulate("fatigue", 0.1 * stress_ch.value)
+                gated_stimulate(
+                    self.hysteresis,
+                    self.governance,
+                    agent="FeedbackLoop",
+                    channel="fatigue",
+                    intensity=0.1 * stress_ch.value,
+                    tick=self._tick_count,
+                    reason="prolonged_stress",
+                )
             # Prolonged pain → amplifies stress
             pain_ch = self.hysteresis.channels.get("pain")
             if pain_ch and pain_ch.value > 0.4:
-                self.hysteresis.stimulate("stress", 0.08 * pain_ch.value)
+                gated_stimulate(
+                    self.hysteresis,
+                    self.governance,
+                    agent="FeedbackLoop",
+                    channel="stress",
+                    intensity=0.08 * pain_ch.value,
+                    tick=self._tick_count,
+                    reason="prolonged_pain",
+                )
+
+        # Stage 3 — circuit breaker observation (after all stim + decay this tick)
+        if self.flags.circuit_breaker_enabled:
+            for ch_name, ch in self.hysteresis.channels.items():
+                self.circuit_breaker.observe(ch_name, ch.value, self._tick_count)
 
         self.runtime_state.clamp()
 
         # Compute and log diff
         state_diff = self.runtime_state.diff(pre_state)
+
+        # Stage 3 — close governance tick window, get aggregated stats
+        governance_stats: Dict[str, Any] = {}
+        if self.flags.governance_enabled:
+            governance_stats = self.governance.end_tick(self._tick_count)
 
         # Emit state snapshot
         snapshot = {
@@ -243,6 +334,8 @@ class ConsciousnessLoop:
             "active_channels": self.hysteresis.get_active_channels(),
             "state_diff": state_diff,
             "had_stimulus": stimulus is not None,
+            "governance": governance_stats,
+            "circuit_breaker_tripped": self.circuit_breaker.tripped_channels(),
         }
 
         await self.event_bus.emit(EventType.STATE_SNAPSHOT, snapshot, source="loop")
@@ -260,6 +353,10 @@ class ConsciousnessLoop:
             log_data["state_diff"] = state_diff
         if result:
             log_data["response"] = result.get("response", "")[:200]
+        if governance_stats.get("decisions"):
+            log_data["governance_decisions"] = governance_stats["decisions"]
+        if self.circuit_breaker.is_tripped():
+            log_data["circuit_breaker_tripped"] = self.circuit_breaker.tripped_channels()
 
         logger.info("tick_complete", **log_data)
 
@@ -281,4 +378,6 @@ class ConsciousnessLoop:
             "hysteresis": self.hysteresis.to_dict(),
             "active_channels": self.hysteresis.get_active_channels(),
             "flags": self.flags.to_dict(),
+            "governance": self.governance.to_dict(),
+            "circuit_breaker": self.circuit_breaker.to_dict(),
         }

@@ -59,6 +59,110 @@ class DbSettings:
 
 
 @dataclass
+class GovernanceSettings:
+    """Stage 3 — deterministic stimulation policy."""
+
+    per_tick_stimulus_cap: float = 0.3
+    per_agent_stimulus_cap: float = 0.2
+    reflection_self_stim_cap: float = 0.1
+    enforce_circuit_breaker: bool = True
+
+
+@dataclass
+class CircuitBreakerSettings:
+    """Stage 3 — saturation lock detection."""
+
+    saturation_threshold: float = 0.95
+    trip_after_ticks: int = 50
+    reset_below: float = 0.7
+
+
+@dataclass
+class PersistenceSettings:
+    """Stage 4 — SQLite WAL event log + checkpoint."""
+
+    enabled: bool = True
+    event_store_path: str = "data/events.db"
+    checkpoint_path: str = "data/checkpoints.db"
+    checkpoint_every_ticks: int = 50  # full snapshot frequency
+    wal_checkpoint_every_seconds: float = 300.0  # PRAGMA wal_checkpoint(RESTART)
+    keep_last_n_snapshots: int = 20  # prune older snapshots
+
+
+@dataclass
+class MemorySettings:
+    """Stage 5 — vector memory store + provenance tracking."""
+
+    enabled: bool = True
+    backend: str = "lancedb"  # "lancedb" | "in_memory"
+    lancedb_uri: str = "data/memories.lance"
+    table_name: str = "memories"
+    embedding_model: str = "BAAI/bge-small-en-v1.5"
+    embedding_provider: str = "sentence-transformers"  # "sentence-transformers" | "openai"
+    real_threshold: float = 0.85  # cosine sim ≥ this => REAL
+    uncertain_threshold: float = 0.65  # cosine sim ≥ this and < real => UNCERTAIN
+    max_results: int = 5
+
+
+@dataclass
+class CostSettings:
+    """Stage 6 — token + USD tracking, daily cap."""
+
+    enabled: bool = True
+    daily_budget_usd: float = 5.0
+    alert_threshold_pct: float = 0.8
+    log_every_record: bool = False
+
+
+@dataclass
+class ObservabilitySettings:
+    """Stage 7 — OpenTelemetry + Rerun.io."""
+
+    enabled: bool = False  # off by default — opt-in
+    otel_enabled: bool = False
+    otel_endpoint: str = "http://localhost:4317"
+    otel_service_name: str = "agi-consciousness"
+    rerun_enabled: bool = False
+    rerun_application_id: str = "consciousness"
+    rerun_spawn: bool = True
+
+
+@dataclass
+class BusSettings:
+    """Stage 8 — NATS JetStream."""
+
+    enabled: bool = False  # off by default — uses asyncio bus
+    nats_url: str = "nats://localhost:4222"
+    stream_name: str = "consciousness"
+    durable_consumer: str = "consciousness-loop"
+    schema_validation: bool = True
+
+
+@dataclass
+class SleepSettings:
+    """Stage 9 — circadian rhythm + sleep mode."""
+
+    enabled: bool = False  # off by default — opt-in
+    awake_seconds: float = 4 * 3600.0  # 4 hours awake
+    sleep_seconds: float = 1 * 3600.0  # 1 hour sleep
+    pressure_to_sleep_threshold: float = 0.7
+    pressure_to_wake_threshold: float = 0.2
+    nrem_fraction: float = 0.7  # of sleep time spent in NREM
+    suppress_llm_during_sleep: bool = True
+
+
+@dataclass
+class ToolsSettings:
+    """Stage 10 — capability-gated tool registry."""
+
+    enabled: bool = False  # off by default — opt-in
+    audit_log_path: str = "data/tool_audit.jsonl"
+    web_search_enabled: bool = False
+    code_executor_enabled: bool = False
+    code_executor_backend: str = "subprocess"  # "subprocess" | "e2b" | "nsjail"
+
+
+@dataclass
 class Settings:
     model: ModelSettings = field(default_factory=ModelSettings)
     runtime_state: RuntimeDefaults = field(default_factory=RuntimeDefaults)
@@ -66,3 +170,12 @@ class Settings:
     consciousness_loop: LoopSettings = field(default_factory=LoopSettings)
     logging: LoggingSettings = field(default_factory=LoggingSettings)
     db: DbSettings = field(default_factory=DbSettings)
+    governance: GovernanceSettings = field(default_factory=GovernanceSettings)
+    circuit_breaker: CircuitBreakerSettings = field(default_factory=CircuitBreakerSettings)
+    persistence: PersistenceSettings = field(default_factory=PersistenceSettings)
+    memory: MemorySettings = field(default_factory=MemorySettings)
+    cost: CostSettings = field(default_factory=CostSettings)
+    observability: ObservabilitySettings = field(default_factory=ObservabilitySettings)
+    bus: BusSettings = field(default_factory=BusSettings)
+    sleep: SleepSettings = field(default_factory=SleepSettings)
+    tools: ToolsSettings = field(default_factory=ToolsSettings)

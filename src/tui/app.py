@@ -8,11 +8,19 @@ from textual.app import App
 from src.config.flags import FeatureFlags
 from src.config.loader import load_flags, load_settings
 from src.config.settings import Settings
+from src.contracts.governance import (
+    ICircuitBreaker,
+    IGovernanceKernel,
+    NullCircuitBreaker,
+    NullGovernanceKernel,
+)
 from src.core.consciousness_loop import ConsciousnessLoop
 from src.core.event_bus import EventBus, EventType
 from src.core.hysteresis import HysteresisEngine
 from src.core.runtime_state import RuntimeState
+from src.engine.circuit_breaker import SaturationCircuitBreaker
 from src.engine.homeostatic_hysteresis import HomeostaticHysteresisEngine
+from src.governance.kernel import DeterministicGovernanceKernel, GovernancePolicy
 from src.logging.setup import get_logger, setup_logging
 from src.team.consciousness_team import ConsciousnessTeam
 from src.tui.screens.flags import FlagsScreen
@@ -62,12 +70,38 @@ class ConsciousnessApp(App):
             if self.flags.homeostatic_hysteresis_enabled
             else self.hysteresis
         )
+
+        # Stage 3 — wire governance kernel + circuit breaker
+        self.circuit_breaker: ICircuitBreaker = (
+            SaturationCircuitBreaker(
+                saturation_threshold=self.settings.circuit_breaker.saturation_threshold,
+                trip_after_ticks=self.settings.circuit_breaker.trip_after_ticks,
+                reset_below=self.settings.circuit_breaker.reset_below,
+            )
+            if self.flags.circuit_breaker_enabled
+            else NullCircuitBreaker()
+        )
+        self.governance: IGovernanceKernel = (
+            DeterministicGovernanceKernel(
+                policy=GovernancePolicy(
+                    per_tick_stimulus_cap=self.settings.governance.per_tick_stimulus_cap,
+                    per_agent_stimulus_cap=self.settings.governance.per_agent_stimulus_cap,
+                    reflection_self_stim_cap=self.settings.governance.reflection_self_stim_cap,
+                    enforce_circuit_breaker=self.settings.governance.enforce_circuit_breaker,
+                ),
+                circuit_breaker=self.circuit_breaker,
+            )
+            if self.flags.governance_enabled
+            else NullGovernanceKernel()
+        )
+
         self.team = ConsciousnessTeam(
             model_settings=self.settings.model,
             runtime_state=self.runtime_state,
             hysteresis=_active_hysteresis,
             flags=self.flags,
             event_bus=self.event_bus,
+            governance=self.governance,
         )
         self.consciousness_loop = ConsciousnessLoop(
             settings=self.settings,
@@ -76,6 +110,8 @@ class ConsciousnessApp(App):
             hysteresis=_active_hysteresis,
             event_bus=self.event_bus,
             team=self.team,
+            governance=self.governance,
+            circuit_breaker=self.circuit_breaker,
         )
         self._loop_task: asyncio.Task | None = None
         self._monitor_task: asyncio.Task | None = None

@@ -14,6 +14,12 @@ from src.agents.planning import create_planning_agent
 from src.agents.reflection import create_reflection_agent
 from src.config.flags import FeatureFlags
 from src.config.settings import ModelSettings
+from src.contracts.governance import (
+    GovernanceDecision,
+    IGovernanceKernel,
+    NullGovernanceKernel,
+    StimulationRequest,
+)
 from src.core.event_bus import EventBus
 from src.core.hysteresis import HysteresisEngine
 from src.core.runtime_state import RuntimeState
@@ -37,10 +43,14 @@ class ConsciousnessTeam:
     flags: FeatureFlags
     event_bus: EventBus
 
+    # Stage 3 — governance kernel (Null impl when disabled, allows everything)
+    governance: IGovernanceKernel = field(default_factory=NullGovernanceKernel)
+
     # Internal state
     memories: List[str] = field(default_factory=list)
     emotion_history: List[Dict[str, Any]] = field(default_factory=list)
     state_journal: List[Dict[str, Any]] = field(default_factory=list)
+    current_tick: int = 0  # set externally by ConsciousnessLoop for governance traceability
     _agents_created: bool = False
 
     def __post_init__(self) -> None:
@@ -61,6 +71,42 @@ class ConsciousnessTeam:
         self.state_journal.append(snapshot)
         if len(self.state_journal) > 30:
             self.state_journal = self.state_journal[-30:]
+
+    def _gated_stimulate(
+        self,
+        agent: str,
+        channel: str,
+        intensity: float,
+        reason: Optional[str] = None,
+    ) -> GovernanceDecision:
+        """Apply a hysteresis stimulation through the governance kernel.
+
+        Negative intensity (self-soothing) is always allowed.
+        Positive intensity passes through governance caps.
+        """
+        if intensity == 0:
+            return GovernanceDecision.ALLOW
+        request = StimulationRequest(
+            agent=agent,
+            channel=channel,
+            intensity=intensity,
+            tick=self.current_tick,
+            reason=reason,
+        )
+        decision = self.governance.authorize(request)
+        if decision == GovernanceDecision.ALLOW:
+            self.hysteresis.stimulate(channel, intensity)
+            self.governance.record(request)
+        else:
+            logger.info(
+                "team_stimulation_denied",
+                agent=agent,
+                channel=channel,
+                intensity=round(intensity, 4),
+                decision=decision.value,
+                reason=reason,
+            )
+        return decision
 
     def _update_agent_states(self) -> None:
         """Push current runtime state into agent session_states."""
@@ -145,10 +191,25 @@ class ConsciousnessTeam:
                     self.emotion_history.append(result["emotion"])
                     if len(self.emotion_history) > 50:
                         self.emotion_history = self.emotion_history[-50:]
-                    # Stimulate hysteresis channels
+                    # Stimulate hysteresis channels through governance kernel
+                    applied: Dict[str, float] = {}
+                    denied: Dict[str, str] = {}
                     for channel, intensity in emotion_data.hysteresis_stimuli.items():
-                        self.hysteresis.stimulate(channel, intensity)
-                    logger.info("hysteresis_stimulated", stimuli=emotion_data.hysteresis_stimuli)
+                        decision = self._gated_stimulate(
+                            agent="Emotion",
+                            channel=channel,
+                            intensity=intensity,
+                            reason=f"emotion={emotion_data.primary_emotion}",
+                        )
+                        if decision == GovernanceDecision.ALLOW:
+                            applied[channel] = intensity
+                        else:
+                            denied[channel] = decision.value
+                    logger.info(
+                        "hysteresis_stimulated",
+                        applied=applied,
+                        denied=denied or None,
+                    )
             except Exception as e:
                 logger.error("agent_error", agent="Emotion", error=str(e))
                 result["emotion_error"] = str(e)
@@ -253,18 +314,28 @@ class ConsciousnessTeam:
                         mood_assessment="unknown",
                     )
                 result = reflection.model_dump()
-                # Self-stimulate hysteresis channels
-                # Only CAP positive (harmful) stimulation; negative (self-soothing) is unlimited
+                # Self-stimulate hysteresis channels through the governance kernel.
+                # Negative (self-soothing) stimulation is always allowed; positive
+                # stimulation is capped by `reflection_self_stim_cap`.
                 if reflection.hysteresis_stimuli:
-                    positive_stim = {k: v for k, v in reflection.hysteresis_stimuli.items() if v > 0}
-                    total_pos = sum(positive_stim.values())
-                    if total_pos > 0.1:
-                        scale = 0.1 / total_pos
-                        for k in positive_stim:
-                            reflection.hysteresis_stimuli[k] *= scale
+                    applied: Dict[str, float] = {}
+                    denied: Dict[str, str] = {}
                     for channel, intensity in reflection.hysteresis_stimuli.items():
-                        self.hysteresis.stimulate(channel, intensity)
-                    logger.info("reflection_self_stimulated", stimuli=reflection.hysteresis_stimuli)
+                        decision = self._gated_stimulate(
+                            agent="Reflection",
+                            channel=channel,
+                            intensity=intensity,
+                            reason="self_reflection",
+                        )
+                        if decision == GovernanceDecision.ALLOW:
+                            applied[channel] = intensity
+                        else:
+                            denied[channel] = decision.value
+                    logger.info(
+                        "reflection_self_stimulated",
+                        applied=applied,
+                        denied=denied or None,
+                    )
                 logger.info("reflection_complete", thought=reflection.thought[:100])
                 return result
         except Exception as e:
