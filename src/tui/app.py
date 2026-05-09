@@ -14,6 +14,12 @@ from src.contracts.governance import (
     NullCircuitBreaker,
     NullGovernanceKernel,
 )
+from src.contracts.persistence import (
+    ICheckpoint,
+    IEventStore,
+    NullCheckpoint,
+    NullEventStore,
+)
 from src.core.consciousness_loop import ConsciousnessLoop
 from src.core.event_bus import EventBus, EventType
 from src.core.hysteresis import HysteresisEngine
@@ -22,6 +28,8 @@ from src.engine.circuit_breaker import SaturationCircuitBreaker
 from src.engine.homeostatic_hysteresis import HomeostaticHysteresisEngine
 from src.governance.kernel import DeterministicGovernanceKernel, GovernancePolicy
 from src.logging.setup import get_logger, setup_logging
+from src.persistence.sqlite_checkpoint import SqliteCheckpoint
+from src.persistence.sqlite_event_store import SqliteEventStore
 from src.team.consciousness_team import ConsciousnessTeam
 from src.tui.screens.flags import FlagsScreen
 from src.tui.screens.main import MainScreen
@@ -95,6 +103,21 @@ class ConsciousnessApp(App):
             else NullGovernanceKernel()
         )
 
+        # Stage 4 — wire persistence (SQLite WAL event store + checkpoint)
+        self.event_store: IEventStore = (
+            SqliteEventStore(
+                db_path=self.settings.persistence.event_store_path,
+                wal_checkpoint_every_seconds=self.settings.persistence.wal_checkpoint_every_seconds,
+            )
+            if self.flags.persistence_enabled
+            else NullEventStore()
+        )
+        self.checkpoint: ICheckpoint = (
+            SqliteCheckpoint(db_path=self.settings.persistence.checkpoint_path)
+            if self.flags.persistence_enabled
+            else NullCheckpoint()
+        )
+
         self.team = ConsciousnessTeam(
             model_settings=self.settings.model,
             runtime_state=self.runtime_state,
@@ -112,6 +135,8 @@ class ConsciousnessApp(App):
             team=self.team,
             governance=self.governance,
             circuit_breaker=self.circuit_breaker,
+            event_store=self.event_store,
+            checkpoint=self.checkpoint,
         )
         self._loop_task: asyncio.Task | None = None
         self._monitor_task: asyncio.Task | None = None
@@ -133,6 +158,14 @@ class ConsciousnessApp(App):
 
         # Push main screen
         await self.push_screen(MainScreen())
+
+        # Stage 4 — try to restore from checkpoint before starting loop
+        try:
+            restored = self.consciousness_loop.restore_from_checkpoint()
+            if restored:
+                logger.info("checkpoint_restored_on_boot", tick=self.consciousness_loop.tick_count)
+        except Exception as e:
+            logger.error("checkpoint_restore_boot_failed", error=str(e))
 
         # Start consciousness loop
         self._loop_task = asyncio.create_task(self.consciousness_loop.start())

@@ -18,6 +18,13 @@ from src.contracts.governance import (
     NullGovernanceKernel,
     StimulationRequest,
 )
+from src.contracts.persistence import (
+    ICheckpoint,
+    IEventStore,
+    NullCheckpoint,
+    NullEventStore,
+    Snapshot,
+)
 from src.core.event_bus import EventBus, EventType
 from src.core.hysteresis import HysteresisEngine
 from src.core.runtime_state import RuntimeState
@@ -90,6 +97,10 @@ class ConsciousnessLoop:
     governance: IGovernanceKernel = field(default_factory=NullGovernanceKernel)
     circuit_breaker: ICircuitBreaker = field(default_factory=NullCircuitBreaker)
 
+    # Stage 4 — persistence (Null implementations by default)
+    event_store: IEventStore = field(default_factory=NullEventStore)
+    checkpoint: ICheckpoint = field(default_factory=NullCheckpoint)
+
     # Internal
     _tick_count: int = 0
     _idle_ticks: int = 0
@@ -100,9 +111,96 @@ class ConsciousnessLoop:
     _runtime_defaults: Optional[RuntimeDefaults] = None
     _reflection_interval: int = 5
     _last_tick_time: Optional[float] = None  # wall-clock time of last tick start (monotonic seconds)
+    _checkpoint_every_ticks: int = 50
 
     def __post_init__(self) -> None:
         self._runtime_defaults = copy.deepcopy(self.settings.runtime_state)
+        # Sync checkpoint frequency from settings
+        self._checkpoint_every_ticks = self.settings.persistence.checkpoint_every_ticks
+
+    def restore_from_checkpoint(self) -> bool:
+        """Try to restore state from the latest checkpoint.
+
+        Returns True if a checkpoint was loaded and applied; False if no
+        checkpoint exists or an error occurred. The loop continues from
+        the restored tick number.
+
+        Persistence subsystem failures must NOT prevent the loop from
+        starting fresh — we always degrade gracefully.
+        """
+        if not self.flags.persistence_enabled:
+            return False
+        try:
+            snapshot = self.checkpoint.load_latest()
+        except Exception as e:
+            logger.error("checkpoint_restore_failed", error=str(e))
+            return False
+        if snapshot is None:
+            return False
+
+        try:
+            # Restore runtime state
+            if snapshot.runtime_state:
+                rs = RuntimeState.from_dict(snapshot.runtime_state)
+                self.runtime_state.temperature = rs.temperature
+                self.runtime_state.context_window = rs.context_window
+                self.runtime_state.processing_latency = rs.processing_latency
+                self.runtime_state.bandwidth = rs.bandwidth
+                self.runtime_state.attention_focus = rs.attention_focus
+                self.runtime_state.energy_level = rs.energy_level
+                self.runtime_state.clamp()
+
+            # Restore hysteresis channel values.
+            # `hysteresis.to_dict()` returns {channel_name: {value, ...}} directly,
+            # without an outer "channels" wrapper.
+            if snapshot.hysteresis and isinstance(snapshot.hysteresis, dict):
+                for name, ch_data in snapshot.hysteresis.items():
+                    if not isinstance(ch_data, dict):
+                        continue
+                    ch = self.hysteresis.channels.get(name)
+                    if ch is None:
+                        continue
+                    try:
+                        ch.value = float(ch_data.get("value", ch.value))
+                    except (TypeError, ValueError):
+                        pass
+
+            # Restore team-side state
+            if snapshot.memories:
+                self.team.memories = list(snapshot.memories)
+            if snapshot.emotion_history:
+                self.team.emotion_history = list(snapshot.emotion_history)
+            if snapshot.state_journal:
+                self.team.state_journal = list(snapshot.state_journal)
+
+            self._tick_count = snapshot.tick
+            logger.info(
+                "checkpoint_restored",
+                tick=snapshot.tick,
+                memories=len(snapshot.memories or []),
+                emotion_history=len(snapshot.emotion_history or []),
+            )
+            return True
+        except Exception as e:
+            logger.error("checkpoint_apply_failed", error=str(e))
+            return False
+
+    def _build_snapshot(self) -> Snapshot:
+        """Capture a full Snapshot of current state for checkpointing."""
+        import time as _time
+        return Snapshot(
+            tick=self._tick_count,
+            timestamp_ms=int(_time.time() * 1000),
+            runtime_state=self.runtime_state.to_dict(),
+            hysteresis=self.hysteresis.to_dict(),
+            memories=list(self.team.memories),
+            emotion_history=list(self.team.emotion_history)[-50:],
+            state_journal=list(self.team.state_journal)[-30:],
+            extra={
+                "governance": self.governance.to_dict(),
+                "circuit_breaker": self.circuit_breaker.to_dict(),
+            },
+        )
 
     @property
     def is_running(self) -> bool:
@@ -141,6 +239,18 @@ class ConsciousnessLoop:
             logger.info("loop_cancelled")
         finally:
             self._running = False
+            # Stage 4 — graceful shutdown: final checkpoint + close stores
+            if self.flags.persistence_enabled:
+                try:
+                    self.checkpoint.save(self._build_snapshot())
+                    logger.info("graceful_checkpoint_saved", tick=self._tick_count)
+                except Exception as e:
+                    logger.error("graceful_checkpoint_failed", error=str(e))
+                try:
+                    self.event_store.close()
+                    self.checkpoint.close()
+                except Exception as e:
+                    logger.warning("persistence_close_warning", error=str(e))
             logger.info("loop_stopped", total_ticks=self._tick_count)
 
     def stop(self) -> None:
@@ -342,6 +452,40 @@ class ConsciousnessLoop:
 
         if state_diff:
             await self.event_bus.emit(EventType.RUNTIME_CHANGE, {"diff": state_diff}, source="loop")
+
+        # Stage 4 — persist event log + periodic checkpoint
+        if self.flags.persistence_enabled:
+            # Always log per-tick snapshot
+            self.event_store.append(
+                tick=self._tick_count,
+                event_type="snapshot",
+                payload=snapshot,
+                source="loop",
+            )
+            if stimulus:
+                self.event_store.append(
+                    tick=self._tick_count,
+                    event_type="stimulus",
+                    payload={"stimulus": stimulus, "result": (result or {}).get("response", "")[:500]},
+                    source="loop",
+                )
+            if state_diff:
+                self.event_store.append(
+                    tick=self._tick_count,
+                    event_type="runtime_change",
+                    payload={"diff": state_diff},
+                    source="loop",
+                )
+            # Full checkpoint every N ticks
+            if self._checkpoint_every_ticks > 0 and self._tick_count % self._checkpoint_every_ticks == 0:
+                try:
+                    self.checkpoint.save(self._build_snapshot())
+                    keep = self.settings.persistence.keep_last_n_snapshots
+                    if keep > 0 and self._tick_count > keep * self._checkpoint_every_ticks:
+                        prune_before = self._tick_count - keep * self._checkpoint_every_ticks
+                        self.checkpoint.prune(prune_before)
+                except Exception as e:
+                    logger.error("checkpoint_save_failed", error=str(e), tick=self._tick_count)
 
         # Log tick
         log_data = {
