@@ -213,7 +213,8 @@
 | 9 | ✅ done | (prev) | 2026-05-09 |
 | 10 | ✅ done | e77d087 | 2026-05-09 |
 | 11 | ✅ done | (prev) | 2026-05-09 | Constitutional Governance Kernel (YAML + 7 policies) |
-| 12 | ✅ done | (this) | 2026-05-09 | ML Regulators (Shannon entropy + CSD + rule-based recovery) |
+| 12 | ✅ done | (prev) | 2026-05-09 | ML Regulators (Shannon entropy + CSD + rule-based recovery) |
+| 13 | ✅ done | (this) | 2026-05-09 | Experiment harness + E2E / falsifiable / ablation tests |
 
 ## Архитектурный слой контрактов
 
