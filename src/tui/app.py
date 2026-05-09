@@ -9,9 +9,11 @@ from src.config.flags import FeatureFlags
 from src.config.loader import load_flags, load_settings
 from src.config.settings import Settings
 from src.contracts.governance import (
+    IConstitutionalAuditor,
     ICircuitBreaker,
     IGovernanceKernel,
     NullCircuitBreaker,
+    NullConstitutionalAuditor,
     NullGovernanceKernel,
 )
 from src.contracts.cost import ICostTracker, NullCostTracker
@@ -45,6 +47,8 @@ from src.engine.circadian import CircadianConfig, CircadianSleepManager
 from src.engine.circuit_breaker import SaturationCircuitBreaker
 from src.engine.homeostatic_hysteresis import HomeostaticHysteresisEngine
 from src.engine.memory_consolidator import HebbianMemoryConsolidator
+from src.governance.auditor import ConstitutionalAuditor
+from src.governance.constitution import load_constitution
 from src.governance.kernel import DeterministicGovernanceKernel, GovernancePolicy
 from src.logging.setup import get_logger, setup_logging
 from src.persistence.cost_tracker import InMemoryCostTracker
@@ -117,6 +121,18 @@ class ConsciousnessApp(App):
             if self.flags.circuit_breaker_enabled
             else NullCircuitBreaker()
         )
+
+        # Stage 11 — constitutional auditor (loaded from YAML)
+        self.constitutional_auditor: IConstitutionalAuditor = (
+            ConstitutionalAuditor(
+                constitution=load_constitution(
+                    self.settings.governance.constitution_path
+                ),
+            )
+            if self.flags.constitution_enabled
+            else NullConstitutionalAuditor()
+        )
+
         self.governance: IGovernanceKernel = (
             DeterministicGovernanceKernel(
                 policy=GovernancePolicy(
@@ -126,6 +142,8 @@ class ConsciousnessApp(App):
                     enforce_circuit_breaker=self.settings.governance.enforce_circuit_breaker,
                 ),
                 circuit_breaker=self.circuit_breaker,
+                auditor=self.constitutional_auditor,
+                state_provider=self._governance_state_provider,
             )
             if self.flags.governance_enabled
             else NullGovernanceKernel()
@@ -248,6 +266,24 @@ class ConsciousnessApp(App):
                 return HashingEmbedder()
         # Future: openai/openrouter embedder. For now hash fallback.
         return HashingEmbedder()
+
+    def _governance_state_provider(self) -> Dict[str, Any]:
+        """Snapshot of state the constitution may reference in its checks.
+
+        Called on every authorize() — keep it cheap.
+        """
+        return {
+            "cost_budget_exceeded": (
+                self.cost_tracker.is_budget_exceeded()
+                if hasattr(self, "cost_tracker")
+                else False
+            ),
+            "tripped_channels": (
+                list(self.circuit_breaker.tripped_channels())
+                if hasattr(self, "circuit_breaker")
+                else []
+            ),
+        }
 
     def _build_observability(self) -> IObservabilityCollector:
         """OTel collector if enabled in flags + settings; Null otherwise."""

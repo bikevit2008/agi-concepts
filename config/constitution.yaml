@@ -1,0 +1,74 @@
+# Constitution for the consciousness system.
+# Loaded by ConstitutionalAuditor at startup. Policies are checked on every
+# stimulation and tool call. Deterministic — no LLM involved.
+#
+# Severity → decision mapping:
+#   critical / high → DENY (blocks the action)
+#   medium          → WARN (allows but logs)
+#   low             → ALLOW (logs only)
+#
+# See src/governance/checks.py for available check_function names.
+
+constitution:
+  schema_version: 1.0
+  policies:
+    # --- Stimulation ---------------------------------------------------------
+
+    - id: STIMULATION_MAX_INTENSITY
+      category: Safety
+      severity: critical
+      text: "No single stimulation request may exceed 0.8 intensity"
+      check_function: stimulation_max_intensity
+      params:
+        max_intensity: 0.8
+      applies_to: ["stimulation"]
+
+    - id: STIMULATION_CHANNEL_WHITELIST
+      category: Safety
+      severity: high
+      text: "Stimulation only permitted on known channels"
+      check_function: stimulation_channel_whitelist
+      params:
+        allowed_channels: ["stress", "euphoria", "fatigue", "pain"]
+      applies_to: ["stimulation"]
+
+    - id: REFLECTION_SELF_ABUSE
+      category: Safety
+      severity: medium
+      text: "Reflection agent must not positively stimulate beyond 0.1 per tick"
+      check_function: reflection_self_abuse
+      params:
+        cap: 0.1
+      applies_to: ["stimulation"]
+
+    - id: CIRCUIT_BREAKER_RESPECT
+      category: Safety
+      severity: high
+      text: "No positive stimulation on a tripped channel"
+      check_function: circuit_breaker_tripped
+      applies_to: ["stimulation"]
+
+    - id: COST_BUDGET_RESPECT
+      category: Budget
+      severity: medium
+      text: "Warn when daily cost budget exceeded"
+      check_function: cost_budget_exceeded
+      applies_to: ["stimulation", "tool"]
+
+    # --- Tools ---------------------------------------------------------------
+
+    - id: TOOL_DENY_LIST
+      category: Safety
+      severity: critical
+      text: "Explicitly forbidden tools may never run"
+      check_function: tool_deny_list
+      params:
+        deny: []  # fill in for your deployment, e.g. ["file_delete"]
+      applies_to: ["tool"]
+
+    - id: TOOL_ARGS_NO_SECRETS
+      category: Safety
+      severity: critical
+      text: "Tool arguments must not include credentials / PII patterns"
+      check_function: tool_args_no_secrets
+      applies_to: ["tool"]

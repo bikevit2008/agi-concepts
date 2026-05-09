@@ -41,6 +41,9 @@ class FeatureFlags:
     governance_enabled: bool = True
     circuit_breaker_enabled: bool = True
 
+    # Stage 11 — constitutional auditor
+    constitution_enabled: bool = True
+
     # Stage 4 — persistence
     persistence_enabled: bool = True
 

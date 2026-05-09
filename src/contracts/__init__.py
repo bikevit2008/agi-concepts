@@ -24,11 +24,17 @@ from src.contracts.cost import (
     TokenUsage,
 )
 from src.contracts.governance import (
+    AuditResult,
+    ConstitutionalViolation,
     GovernanceDecision,
     ICircuitBreaker,
+    IConstitutionalAuditor,
     IGovernanceKernel,
     NullCircuitBreaker,
+    NullConstitutionalAuditor,
     NullGovernanceKernel,
+    PolicySeverity,
+    RiskTier,
     StimulationRequest,
 )
 from src.contracts.memory import (
@@ -82,11 +88,17 @@ __all__ = [
     "NullCostTracker",
     "TokenUsage",
     # Governance
+    "AuditResult",
+    "ConstitutionalViolation",
     "GovernanceDecision",
     "ICircuitBreaker",
+    "IConstitutionalAuditor",
     "IGovernanceKernel",
     "NullCircuitBreaker",
+    "NullConstitutionalAuditor",
     "NullGovernanceKernel",
+    "PolicySeverity",
+    "RiskTier",
     "StimulationRequest",
     # Memory
     "IMemoryStore",

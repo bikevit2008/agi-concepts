@@ -14,9 +14,9 @@ without significant overhead (no LLM, no I/O).
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
-from typing import Dict, List, Optional, Protocol, runtime_checkable
+from typing import Any, Dict, List, Optional, Protocol, runtime_checkable
 
 
 class GovernanceDecision(str, Enum):
@@ -29,6 +29,56 @@ class GovernanceDecision(str, Enum):
     DENY_CIRCUIT_BREAKER = "deny_circuit_breaker"
     DENY_CAPABILITY = "deny_capability"
     DENY_BUDGET = "deny_budget"
+    DENY_CONSTITUTION = "deny_constitution"
+    WARN_CONSTITUTION = "warn_constitution"
+
+
+class PolicySeverity(str, Enum):
+    """Severity tier of a constitutional policy.
+
+    Mapping to graduated responses:
+        CRITICAL → DENY  (block the action outright)
+        HIGH     → DENY  (same as critical; different audit severity)
+        MEDIUM   → WARN  (allow but surface a warning)
+        LOW      → ALLOW (log only)
+    """
+
+    CRITICAL = "critical"
+    HIGH = "high"
+    MEDIUM = "medium"
+    LOW = "low"
+
+
+class RiskTier(str, Enum):
+    """Action risk classification for graduated responses."""
+
+    LOW = "low"  # ≤ 30 risk score
+    MEDIUM = "medium"  # 31-70
+    HIGH = "high"  # > 70
+
+
+@dataclass(frozen=True)
+class ConstitutionalViolation:
+    """A single policy violation detected by the auditor."""
+
+    policy_id: str
+    severity: PolicySeverity
+    message: str
+    # Optional extra context for audit logs
+    check_name: Optional[str] = None
+
+
+@dataclass
+class AuditResult:
+    """Outcome of a constitutional audit — used by callers to decide
+    allow / warn / deny. Not frozen — callers may add metadata."""
+
+    approved: bool
+    decision: GovernanceDecision
+    risk_tier: RiskTier
+    risk_score: float  # 0..100
+    violations: List[ConstitutionalViolation] = field(default_factory=list)
+    rationale: str = ""
 
 
 @dataclass(frozen=True)
@@ -79,6 +129,42 @@ class ICircuitBreaker(Protocol):
 
     def to_dict(self) -> Dict[str, object]:
         """Export state for snapshots / observability."""
+        ...
+
+
+@runtime_checkable
+class IConstitutionalAuditor(Protocol):
+    """Audits actions against a loaded constitution.
+
+    Constitution is declarative (YAML), checks are deterministic
+    (Python functions keyed by name in `check_function`). Auditor is
+    stateless per audit call but may cache compiled regexes internally.
+
+    Audit returns an `AuditResult` describing allow/warn/deny along with
+    the specific policy violations. Callers translate the result into
+    a `GovernanceDecision`.
+    """
+
+    def audit_stimulation(
+        self,
+        request: "StimulationRequest",
+        system_state: Dict[str, Any],
+    ) -> AuditResult:
+        """Audit a stimulation request against the constitution."""
+        ...
+
+    def audit_tool_call(
+        self,
+        tool_name: str,
+        args: Dict[str, Any],
+        agent: str,
+        system_state: Dict[str, Any],
+    ) -> AuditResult:
+        """Audit a tool-call request against the constitution."""
+        ...
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Expose current constitution for snapshots."""
         ...
 
 
@@ -167,3 +253,40 @@ class NullGovernanceKernel:
 
     def to_dict(self) -> Dict[str, object]:
         return {"type": "null"}
+
+
+class NullConstitutionalAuditor:
+    """No-op auditor: every action approved, empty violations list."""
+
+    def audit_stimulation(
+        self,
+        request: "StimulationRequest",
+        system_state: Dict[str, Any],
+    ) -> AuditResult:
+        return AuditResult(
+            approved=True,
+            decision=GovernanceDecision.ALLOW,
+            risk_tier=RiskTier.LOW,
+            risk_score=0.0,
+            violations=[],
+            rationale="null auditor",
+        )
+
+    def audit_tool_call(
+        self,
+        tool_name: str,
+        args: Dict[str, Any],
+        agent: str,
+        system_state: Dict[str, Any],
+    ) -> AuditResult:
+        return AuditResult(
+            approved=True,
+            decision=GovernanceDecision.ALLOW,
+            risk_tier=RiskTier.LOW,
+            risk_score=0.0,
+            violations=[],
+            rationale="null auditor",
+        )
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {"type": "null", "policies": []}

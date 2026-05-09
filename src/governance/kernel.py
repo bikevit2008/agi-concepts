@@ -29,9 +29,12 @@ from typing import Any, Dict, Optional
 import structlog
 
 from src.contracts.governance import (
+    AuditResult,
     GovernanceDecision,
+    IConstitutionalAuditor,
     ICircuitBreaker,
     IGovernanceKernel,
+    NullConstitutionalAuditor,
     StimulationRequest,
 )
 
@@ -67,15 +70,22 @@ class _TickStats:
 class DeterministicGovernanceKernel:
     """`IGovernanceKernel` implementation backed by deterministic counters.
 
-    Construct with policy + an optional circuit breaker. The kernel
-    consults the breaker on every authorize() call when the policy
-    enforces it.
+    Construct with policy + an optional circuit breaker + an optional
+    constitutional auditor. The kernel consults:
+      1. the constitution (auditor) — WARN/DENY based on policy violations
+      2. the circuit breaker
+      3. the reflection/per-agent/per-tick caps
     """
 
     policy: GovernancePolicy = field(default_factory=GovernancePolicy)
     circuit_breaker: Optional[ICircuitBreaker] = None
+    auditor: IConstitutionalAuditor = field(default_factory=NullConstitutionalAuditor)
+    # Optional state provider; called each authorize() to get current
+    # system state for constitution checks (e.g. cost_budget_exceeded).
+    state_provider: Optional[Any] = None
     _stats: _TickStats = field(default_factory=_TickStats)
     _cumulative_decisions: Dict[str, int] = field(default_factory=dict)
+    _last_audit: Optional[AuditResult] = None
 
     def begin_tick(self, tick: int) -> None:
         self._stats = _TickStats(tick=tick)
@@ -96,6 +106,33 @@ class DeterministicGovernanceKernel:
         # Negative intensity always allowed — see module docstring.
         if request.intensity <= 0:
             return self._record_decision(GovernanceDecision.ALLOW)
+
+        # Constitutional audit (runs first — strongest form of deny).
+        # Stateless auditor; state provider is optional.
+        try:
+            state = self.state_provider() if callable(self.state_provider) else {}
+        except Exception as e:
+            logger.warning("state_provider_failed", error=str(e))
+            state = {}
+        audit = self.auditor.audit_stimulation(request, state)
+        self._last_audit = audit
+        if audit.decision == GovernanceDecision.DENY_CONSTITUTION:
+            logger.warning(
+                "governance_deny_constitution",
+                agent=request.agent,
+                channel=request.channel,
+                rationale=audit.rationale,
+                risk_tier=audit.risk_tier.value,
+            )
+            return self._record_decision(GovernanceDecision.DENY_CONSTITUTION)
+        if audit.decision == GovernanceDecision.WARN_CONSTITUTION:
+            logger.info(
+                "governance_warn_constitution",
+                agent=request.agent,
+                channel=request.channel,
+                rationale=audit.rationale,
+            )
+            # Continue to the remaining checks; WARN does not block.
 
         # Circuit breaker check
         if (
@@ -174,6 +211,10 @@ class DeterministicGovernanceKernel:
                 "per_channel": {k: round(v, 4) for k, v in self._stats.per_channel_positive.items()},
             },
             "cumulative_decisions": dict(self._cumulative_decisions),
+            "auditor": self.auditor.to_dict(),
+            "last_audit_rationale": (
+                self._last_audit.rationale if self._last_audit else None
+            ),
         }
 
     def _record_decision(self, decision: GovernanceDecision) -> GovernanceDecision:

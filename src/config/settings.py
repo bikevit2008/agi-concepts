@@ -60,12 +60,16 @@ class DbSettings:
 
 @dataclass
 class GovernanceSettings:
-    """Stage 3 — deterministic stimulation policy."""
+    """Stage 3 — deterministic stimulation policy.
+
+    Stage 11 — constitutional auditor (path + toggle).
+    """
 
     per_tick_stimulus_cap: float = 0.3
     per_agent_stimulus_cap: float = 0.2
     reflection_self_stim_cap: float = 0.1
     enforce_circuit_breaker: bool = True
+    constitution_path: str = "config/constitution.yaml"
 
 
 @dataclass
