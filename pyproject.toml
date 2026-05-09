@@ -38,8 +38,11 @@ ml = [
     "scikit-learn>=1.3",
     "statsmodels>=0.14",
 ]
+tools = [
+    "requests>=2.31",
+]
 all = [
-    "agi-consciousness[persistence,memory,bus,observability,hysteresis,ml]",
+    "agi-consciousness[persistence,memory,bus,observability,hysteresis,ml,tools]",
 ]
 
 [project.scripts]
