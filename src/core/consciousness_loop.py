@@ -650,6 +650,10 @@ class ConsciousnessLoop:
             "had_stimulus": stimulus is not None,
             "governance": governance_stats,
             "circuit_breaker_tripped": self.circuit_breaker.tripped_channels(),
+            # Stage 12/16 — ML regulators payload + recovery_action shortcut
+            # (used by ml.dataset.build_dataset_from_event_store)
+            "ml": ml_payload,
+            "recovery_action": ml_payload.get("recovery_action"),
         }
 
         await self.event_bus.emit(EventType.STATE_SNAPSHOT, snapshot, source="loop")
