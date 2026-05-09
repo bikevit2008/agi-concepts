@@ -1,10 +1,24 @@
-"""Persistence subsystem — event sourcing + checkpoint + memory store + provenance.
+"""Persistence subsystem.
 
-Backed by SQLite WAL for events/checkpoints (Stage 4) and LanceDB for
-vector memories (Stage 5). Both have lighter fallback implementations
-that are always available.
+Stages covered:
+- Stage 4: SQLite WAL event store + checkpoint
+- Stage 5: LanceDB vector memory store + provenance
+- Stage 6: Cost tracking (token + USD accounting)
+
+Each subsystem has a Null fallback in src.contracts so the loop can
+run with feature flags disabled.
 """
 
+from src.persistence.cost_aware_agent import (
+    AgnoModelInvoker,
+    build_fallback_config,
+    record_run_metrics,
+)
+from src.persistence.cost_tracker import (
+    DEFAULT_MODEL_RATES,
+    InMemoryCostTracker,
+    ModelRate,
+)
 from src.persistence.embedder import (
     HashingEmbedder,
     IEmbedder,
@@ -26,4 +40,11 @@ __all__ = [
     "InMemoryMemoryStore",
     "LanceDbMemoryStore",
     "EmbeddingProvenanceTracker",
+    # Stage 6
+    "InMemoryCostTracker",
+    "ModelRate",
+    "DEFAULT_MODEL_RATES",
+    "AgnoModelInvoker",
+    "build_fallback_config",
+    "record_run_metrics",
 ]

@@ -14,6 +14,7 @@ from src.contracts.governance import (
     NullCircuitBreaker,
     NullGovernanceKernel,
 )
+from src.contracts.cost import ICostTracker, NullCostTracker
 from src.contracts.memory import (
     IMemoryStore,
     IProvenanceTracker,
@@ -34,6 +35,7 @@ from src.engine.circuit_breaker import SaturationCircuitBreaker
 from src.engine.homeostatic_hysteresis import HomeostaticHysteresisEngine
 from src.governance.kernel import DeterministicGovernanceKernel, GovernancePolicy
 from src.logging.setup import get_logger, setup_logging
+from src.persistence.cost_tracker import InMemoryCostTracker
 from src.persistence.embedder import (
     HashingEmbedder,
     IEmbedder,
@@ -144,6 +146,16 @@ class ConsciousnessApp(App):
             else NullProvenanceTracker()
         )
 
+        # Stage 6 — cost tracking
+        self.cost_tracker: ICostTracker = (
+            InMemoryCostTracker(
+                daily_budget_usd=self.settings.cost.daily_budget_usd,
+                alert_threshold_pct=self.settings.cost.alert_threshold_pct,
+            )
+            if self.flags.cost_tracking_enabled
+            else NullCostTracker()
+        )
+
         self.team = ConsciousnessTeam(
             model_settings=self.settings.model,
             runtime_state=self.runtime_state,
@@ -153,6 +165,7 @@ class ConsciousnessApp(App):
             governance=self.governance,
             memory_store=self.memory_store,
             provenance_tracker=self.provenance_tracker,
+            cost_tracker=self.cost_tracker,
         )
         self.consciousness_loop = ConsciousnessLoop(
             settings=self.settings,
