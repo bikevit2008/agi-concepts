@@ -31,12 +31,20 @@ from src.contracts.persistence import (
     NullCheckpoint,
     NullEventStore,
 )
+from src.contracts.sleep import (
+    IMemoryConsolidator,
+    ISleepManager,
+    NullMemoryConsolidator,
+    NullSleepManager,
+)
 from src.core.consciousness_loop import ConsciousnessLoop
 from src.core.event_bus import EventBus, EventType
 from src.core.hysteresis import HysteresisEngine
 from src.core.runtime_state import RuntimeState
+from src.engine.circadian import CircadianConfig, CircadianSleepManager
 from src.engine.circuit_breaker import SaturationCircuitBreaker
 from src.engine.homeostatic_hysteresis import HomeostaticHysteresisEngine
+from src.engine.memory_consolidator import HebbianMemoryConsolidator
 from src.governance.kernel import DeterministicGovernanceKernel, GovernancePolicy
 from src.logging.setup import get_logger, setup_logging
 from src.persistence.cost_tracker import InMemoryCostTracker
@@ -165,6 +173,27 @@ class ConsciousnessApp(App):
         self.observability: IObservabilityCollector = self._build_observability()
         self.rerun_logger = self._build_rerun_logger()
 
+        # Stage 9 — sleep manager + memory consolidator (off by default)
+        self.sleep_manager: ISleepManager = (
+            CircadianSleepManager(
+                config=CircadianConfig(
+                    awake_seconds=self.settings.sleep.awake_seconds,
+                    sleep_seconds=self.settings.sleep.sleep_seconds,
+                    pressure_to_sleep_threshold=self.settings.sleep.pressure_to_sleep_threshold,
+                    pressure_to_wake_threshold=self.settings.sleep.pressure_to_wake_threshold,
+                    nrem_fraction=self.settings.sleep.nrem_fraction,
+                    suppress_llm_during_sleep=self.settings.sleep.suppress_llm_during_sleep,
+                )
+            )
+            if self.flags.sleep_mode_enabled
+            else NullSleepManager()
+        )
+        self.memory_consolidator: IMemoryConsolidator = (
+            HebbianMemoryConsolidator(memory_store=self.memory_store)
+            if self.flags.memory_consolidation_enabled
+            else NullMemoryConsolidator()
+        )
+
         self.team = ConsciousnessTeam(
             model_settings=self.settings.model,
             runtime_state=self.runtime_state,
@@ -188,6 +217,8 @@ class ConsciousnessApp(App):
             event_store=self.event_store,
             checkpoint=self.checkpoint,
             observability=self.observability,
+            sleep_manager=self.sleep_manager,
+            memory_consolidator=self.memory_consolidator,
         )
         self._loop_task: asyncio.Task | None = None
         self._monitor_task: asyncio.Task | None = None

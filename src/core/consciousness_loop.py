@@ -29,6 +29,14 @@ from src.contracts.persistence import (
     NullEventStore,
     Snapshot,
 )
+from src.contracts.sleep import (
+    IMemoryConsolidator,
+    ISleepManager,
+    NullMemoryConsolidator,
+    NullSleepManager,
+    SleepPhase,
+    WakeState,
+)
 from src.core.event_bus import EventBus, EventType
 from src.core.hysteresis import HysteresisEngine
 from src.core.runtime_state import RuntimeState
@@ -107,6 +115,10 @@ class ConsciousnessLoop:
 
     # Stage 7 — observability collector (OTel by default in TUI; Null otherwise)
     observability: IObservabilityCollector = field(default_factory=NullObservabilityCollector)
+
+    # Stage 9 — sleep manager + memory consolidator (Null when disabled)
+    sleep_manager: ISleepManager = field(default_factory=NullSleepManager)
+    memory_consolidator: IMemoryConsolidator = field(default_factory=NullMemoryConsolidator)
 
     # Internal
     _tick_count: int = 0
@@ -191,6 +203,31 @@ class ConsciousnessLoop:
         except Exception as e:
             logger.error("checkpoint_apply_failed", error=str(e))
             return False
+
+    def _maybe_consolidate(self, decision) -> None:
+        """Run memory consolidation when entering NREM/REM phases.
+
+        We don't run on every tick — only when the phase actually changes
+        (debounced via _last_consolidated_phase).
+        """
+        if not self.flags.memory_consolidation_enabled:
+            return
+        if decision is None or decision.phase == SleepPhase.NONE:
+            return
+
+        last = getattr(self, "_last_consolidated_phase", None)
+        if last == decision.phase:
+            return
+        self._last_consolidated_phase = decision.phase
+
+        try:
+            if decision.phase == SleepPhase.NREM:
+                stats = self.memory_consolidator.consolidate_nrem(memory_ids=[])
+            else:
+                stats = self.memory_consolidator.consolidate_rem(memory_ids=[])
+            logger.info("memory_consolidation_done", phase=decision.phase.value, stats=stats)
+        except Exception as e:
+            logger.error("memory_consolidation_failed", error=str(e))
 
     def _build_snapshot(self) -> Snapshot:
         """Capture a full Snapshot of current state for checkpointing."""
@@ -303,6 +340,19 @@ class ConsciousnessLoop:
         # Make tick number visible to the team for governance traceability
         self.team.current_tick = self._tick_count
 
+        # Stage 9 — advance sleep model and decide whether to suppress LLM
+        sleep_decision = None
+        if self.flags.sleep_mode_enabled:
+            sleep_decision = self.sleep_manager.update(
+                tick=self._tick_count,
+                dt_seconds=dt,
+                runtime_state=self.runtime_state.to_dict(),
+                hysteresis_state={
+                    n: c.value for n, c in self.hysteresis.channels.items()
+                },
+            )
+            self._maybe_consolidate(sleep_decision)
+
         # Check for stimulus
         stimulus: Optional[str] = None
         try:
@@ -315,20 +365,34 @@ class ConsciousnessLoop:
 
         # Process stimulus if present
         result: Optional[Dict[str, Any]] = None
+        suppress_llm = bool(sleep_decision and sleep_decision.suppress_llm_calls)
         if stimulus:
             self._idle_ticks = 0
-            logger.info("tick_processing", tick=self._tick_count, stimulus=stimulus[:100])
-            # Run blocking agent calls in a thread to not block the Textual event loop
-            result = await asyncio.to_thread(self.team.process_stimulus_sync, stimulus)
-            # Notify response callbacks
-            for cb in self._response_callbacks:
-                try:
-                    await cb(result)
-                except Exception as e:
-                    logger.error("response_callback_error", error=str(e))
+            if suppress_llm:
+                # Asleep — defer the stimulus by re-queuing for after wake.
+                logger.info(
+                    "tick_stimulus_deferred_during_sleep",
+                    tick=self._tick_count,
+                    stimulus=stimulus[:100],
+                )
+                await self._stimulus_queue.put(stimulus)
+            else:
+                logger.info(
+                    "tick_processing", tick=self._tick_count, stimulus=stimulus[:100]
+                )
+                # Run blocking agent calls in a thread to not block the Textual event loop
+                result = await asyncio.to_thread(self.team.process_stimulus_sync, stimulus)
+                # Notify response callbacks
+                for cb in self._response_callbacks:
+                    try:
+                        await cb(result)
+                    except Exception as e:
+                        logger.error("response_callback_error", error=str(e))
 
         # === AUTONOMOUS THINKING (no external stimulus) ===
-        if not stimulus and self._idle_ticks > 0:
+        # Skip entirely while asleep — no internal monologue, no spontaneous
+        # thoughts. The system needs rest.
+        if not stimulus and self._idle_ticks > 0 and not suppress_llm:
 
             # Self-reflection (every 5 idle ticks)
             if (
