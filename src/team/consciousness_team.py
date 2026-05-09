@@ -17,6 +17,7 @@ from src.config.settings import ModelSettings
 from src.core.event_bus import EventBus
 from src.core.hysteresis import HysteresisEngine
 from src.core.runtime_state import RuntimeState
+from src.engine.homeostatic_hysteresis import HomeostaticHysteresisEngine
 
 logger = structlog.get_logger("consciousness.team")
 
@@ -32,7 +33,7 @@ class ConsciousnessTeam:
 
     model_settings: ModelSettings
     runtime_state: RuntimeState
-    hysteresis: HysteresisEngine
+    hysteresis: HysteresisEngine | HomeostaticHysteresisEngine
     flags: FeatureFlags
     event_bus: EventBus
 

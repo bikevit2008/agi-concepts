@@ -33,6 +33,8 @@ def _build_hysteresis_params(data: Dict[str, Any]) -> HysteresisParams:
         decay_rate=data.get("decay_rate", 0.05),
         accumulation_rate=data.get("accumulation_rate", 0.15),
         threshold=data.get("threshold", 0.3),
+        setpoint=data.get("setpoint", 0.1),
+        restoration_gain=data.get("restoration_gain", 0.4),
     )
 
 

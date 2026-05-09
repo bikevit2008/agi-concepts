@@ -25,6 +25,7 @@ class FeatureFlags:
     hysteresis_enabled: bool = True
     runtime_effects_enabled: bool = True
     feedback_loops_enabled: bool = True
+    homeostatic_hysteresis_enabled: bool = True
 
     # Inner monologue & autonomy
     self_reflection_enabled: bool = True

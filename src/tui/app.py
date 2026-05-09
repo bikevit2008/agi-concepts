@@ -12,6 +12,7 @@ from src.core.consciousness_loop import ConsciousnessLoop
 from src.core.event_bus import EventBus, EventType
 from src.core.hysteresis import HysteresisEngine
 from src.core.runtime_state import RuntimeState
+from src.engine.homeostatic_hysteresis import HomeostaticHysteresisEngine
 from src.logging.setup import get_logger, setup_logging
 from src.team.consciousness_team import ConsciousnessTeam
 from src.tui.screens.flags import FlagsScreen
@@ -52,10 +53,19 @@ class ConsciousnessApp(App):
             }
         )
         self.hysteresis = HysteresisEngine.from_settings(self.settings.hysteresis)
+        self.homeostatic_hysteresis = HomeostaticHysteresisEngine.from_settings(
+            self.settings.hysteresis
+        )
+        # Select active hysteresis engine based on feature flag
+        _active_hysteresis = (
+            self.homeostatic_hysteresis
+            if self.flags.homeostatic_hysteresis_enabled
+            else self.hysteresis
+        )
         self.team = ConsciousnessTeam(
             model_settings=self.settings.model,
             runtime_state=self.runtime_state,
-            hysteresis=self.hysteresis,
+            hysteresis=_active_hysteresis,
             flags=self.flags,
             event_bus=self.event_bus,
         )
@@ -63,7 +73,7 @@ class ConsciousnessApp(App):
             settings=self.settings,
             flags=self.flags,
             runtime_state=self.runtime_state,
-            hysteresis=self.hysteresis,
+            hysteresis=_active_hysteresis,
             event_bus=self.event_bus,
             team=self.team,
         )

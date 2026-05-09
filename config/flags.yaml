@@ -11,6 +11,7 @@ planning_enabled: true
 hysteresis_enabled: true
 runtime_effects_enabled: true
 feedback_loops_enabled: true
+homeostatic_hysteresis_enabled: true
 
 # Inner monologue & autonomy
 self_reflection_enabled: true

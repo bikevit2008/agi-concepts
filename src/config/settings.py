@@ -28,14 +28,16 @@ class HysteresisParams:
     decay_rate: float = 0.05
     accumulation_rate: float = 0.15
     threshold: float = 0.3
+    setpoint: float = 0.1
+    restoration_gain: float = 0.4
 
 
 @dataclass
 class HysteresisSettings:
-    stress: HysteresisParams = field(default_factory=lambda: HysteresisParams(0.05, 0.15, 0.3))
-    euphoria: HysteresisParams = field(default_factory=lambda: HysteresisParams(0.08, 0.12, 0.4))
-    fatigue: HysteresisParams = field(default_factory=lambda: HysteresisParams(0.02, 0.10, 0.5))
-    pain: HysteresisParams = field(default_factory=lambda: HysteresisParams(0.10, 0.20, 0.2))
+    stress: HysteresisParams = field(default_factory=lambda: HysteresisParams(0.05, 0.15, 0.3, 0.1, 0.3))
+    euphoria: HysteresisParams = field(default_factory=lambda: HysteresisParams(0.08, 0.12, 0.4, 0.15, 0.35))
+    fatigue: HysteresisParams = field(default_factory=lambda: HysteresisParams(0.02, 0.10, 0.5, 0.1, 0.4))
+    pain: HysteresisParams = field(default_factory=lambda: HysteresisParams(0.10, 0.20, 0.2, 0.05, 0.5))
 
 
 @dataclass

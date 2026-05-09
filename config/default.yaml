@@ -20,18 +20,26 @@ hysteresis:
     decay_rate: 0.05
     accumulation_rate: 0.15
     threshold: 0.3
+    setpoint: 0.1
+    restoration_gain: 0.3
   euphoria:
     decay_rate: 0.08
     accumulation_rate: 0.12
     threshold: 0.4
+    setpoint: 0.15
+    restoration_gain: 0.35
   fatigue:
     decay_rate: 0.02
     accumulation_rate: 0.10
     threshold: 0.5
+    setpoint: 0.1
+    restoration_gain: 0.4
   pain:
     decay_rate: 0.10
     accumulation_rate: 0.20
     threshold: 0.2
+    setpoint: 0.05
+    restoration_gain: 0.5
 
 consciousness_loop:
   tick_interval_sec: 2.0

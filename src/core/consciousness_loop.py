@@ -13,6 +13,7 @@ from src.config.settings import RuntimeDefaults, Settings
 from src.core.event_bus import EventBus, EventType
 from src.core.hysteresis import HysteresisEngine
 from src.core.runtime_state import RuntimeState
+from src.engine.homeostatic_hysteresis import HomeostaticHysteresisEngine
 from src.team.consciousness_team import ConsciousnessTeam
 
 logger = structlog.get_logger("consciousness.loop")
@@ -43,7 +44,7 @@ class ConsciousnessLoop:
     settings: Settings
     flags: FeatureFlags
     runtime_state: RuntimeState
-    hysteresis: HysteresisEngine
+    hysteresis: HysteresisEngine | HomeostaticHysteresisEngine
     event_bus: EventBus
     team: ConsciousnessTeam
 
