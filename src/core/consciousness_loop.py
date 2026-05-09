@@ -18,6 +18,10 @@ from src.contracts.governance import (
     NullGovernanceKernel,
     StimulationRequest,
 )
+from src.contracts.observability import (
+    IObservabilityCollector,
+    NullObservabilityCollector,
+)
 from src.contracts.persistence import (
     ICheckpoint,
     IEventStore,
@@ -100,6 +104,9 @@ class ConsciousnessLoop:
     # Stage 4 — persistence (Null implementations by default)
     event_store: IEventStore = field(default_factory=NullEventStore)
     checkpoint: ICheckpoint = field(default_factory=NullCheckpoint)
+
+    # Stage 7 — observability collector (OTel by default in TUI; Null otherwise)
+    observability: IObservabilityCollector = field(default_factory=NullObservabilityCollector)
 
     # Internal
     _tick_count: int = 0
@@ -261,10 +268,20 @@ class ConsciousnessLoop:
         """Execute one tick of the consciousness loop."""
         self._tick_count += 1
 
-        try:
-            await self._tick_inner()
-        except Exception as e:
-            logger.error("tick_error", tick=self._tick_count, error=str(e))
+        with self.observability.start_span(
+            "consciousness.tick",
+            attributes={
+                "consciousness.tick": self._tick_count,
+                "consciousness.idle_ticks": self._idle_ticks,
+            },
+        ) as span:
+            try:
+                await self._tick_inner()
+                span.set_status(ok=True)
+            except Exception as e:
+                logger.error("tick_error", tick=self._tick_count, error=str(e))
+                span.record_exception(e)
+                span.set_status(ok=False, description=str(e))
 
     async def _tick_inner(self) -> None:
         """Inner tick logic, separated so _tick can catch all errors."""
@@ -503,6 +520,18 @@ class ConsciousnessLoop:
             log_data["circuit_breaker_tripped"] = self.circuit_breaker.tripped_channels()
 
         logger.info("tick_complete", **log_data)
+
+        # Stage 7 — emit metrics for the dashboard
+        try:
+            self.observability.record_metric("consciousness.ticks", 1.0)
+            for ch_name, ch in self.hysteresis.channels.items():
+                self.observability.record_metric(
+                    "consciousness.hysteresis.value",
+                    float(ch.value),
+                    attributes={"channel": ch_name},
+                )
+        except Exception:
+            pass
 
     def _compute_max_tokens(self) -> int:
         """Compute current max_tokens from vitality (energy + bandwidth)."""

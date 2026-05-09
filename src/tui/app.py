@@ -21,6 +21,10 @@ from src.contracts.memory import (
     NullMemoryStore,
     NullProvenanceTracker,
 )
+from src.contracts.observability import (
+    IObservabilityCollector,
+    NullObservabilityCollector,
+)
 from src.contracts.persistence import (
     ICheckpoint,
     IEventStore,
@@ -46,6 +50,7 @@ from src.persistence.provenance import EmbeddingProvenanceTracker
 from src.persistence.sqlite_checkpoint import SqliteCheckpoint
 from src.persistence.sqlite_event_store import SqliteEventStore
 from src.team.consciousness_team import ConsciousnessTeam
+from src.visualization.rerun_logger import NullRerunLogger, RerunLogger
 from src.tui.screens.flags import FlagsScreen
 from src.tui.screens.main import MainScreen
 from src.tui.screens.monitor import MonitorScreen
@@ -156,6 +161,10 @@ class ConsciousnessApp(App):
             else NullCostTracker()
         )
 
+        # Stage 7 — observability + visualization (off by default)
+        self.observability: IObservabilityCollector = self._build_observability()
+        self.rerun_logger = self._build_rerun_logger()
+
         self.team = ConsciousnessTeam(
             model_settings=self.settings.model,
             runtime_state=self.runtime_state,
@@ -178,6 +187,7 @@ class ConsciousnessApp(App):
             circuit_breaker=self.circuit_breaker,
             event_store=self.event_store,
             checkpoint=self.checkpoint,
+            observability=self.observability,
         )
         self._loop_task: asyncio.Task | None = None
         self._monitor_task: asyncio.Task | None = None
@@ -207,6 +217,33 @@ class ConsciousnessApp(App):
                 return HashingEmbedder()
         # Future: openai/openrouter embedder. For now hash fallback.
         return HashingEmbedder()
+
+    def _build_observability(self) -> IObservabilityCollector:
+        """OTel collector if enabled in flags + settings; Null otherwise."""
+        if not (self.flags.observability_enabled and self.flags.otel_enabled):
+            return NullObservabilityCollector()
+        try:
+            from src.observability.otel import OtelObservabilityCollector
+            return OtelObservabilityCollector(
+                service_name=self.settings.observability.otel_service_name,
+                otel_endpoint=self.settings.observability.otel_endpoint,
+            )
+        except Exception as e:
+            logger.warning("observability_fallback_to_null", error=str(e))
+            return NullObservabilityCollector()
+
+    def _build_rerun_logger(self):
+        """Real RerunLogger if enabled; Null otherwise."""
+        if not (self.flags.observability_enabled and self.flags.rerun_enabled):
+            return NullRerunLogger()
+        try:
+            return RerunLogger(
+                application_id=self.settings.observability.rerun_application_id,
+                spawn=self.settings.observability.rerun_spawn,
+            )
+        except Exception as e:
+            logger.warning("rerun_fallback_to_null", error=str(e))
+            return NullRerunLogger()
 
     def _build_memory_store(self, embedder: IEmbedder) -> IMemoryStore:
         """Pick a memory store backend with a graceful degradation chain.
@@ -322,22 +359,40 @@ class ConsciousnessApp(App):
             logger.error("tui_response_error", error=str(e))
 
     async def _on_state_snapshot(self, event: Any) -> None:
-        """Update TUI panels from state snapshot."""
+        """Update TUI panels + Rerun viewer from state snapshot."""
         try:
             screen = self.screen
+            data = event.data
+            tick = data.get("tick", 0)
+            rt = data.get("runtime_state", {})
+            hyst = data.get("hysteresis", {})
+
             if isinstance(screen, MainScreen):
-                data = event.data
                 screen.update_tick_status(
-                    tick=data.get("tick", 0),
+                    tick=tick,
                     idle=data.get("idle_ticks", 0),
                     queue_size=0,
                 )
-                rt = data.get("runtime_state", {})
                 if rt:
                     screen.update_runtime_state(rt)
-                hyst = data.get("hysteresis", {})
                 if hyst:
                     screen.update_hysteresis(hyst)
+
+            # Stream to Rerun viewer (no-op if disabled)
+            try:
+                self.rerun_logger.log_runtime_state(tick, rt)
+                self.rerun_logger.log_hysteresis(tick, hyst)
+                tripped = data.get("circuit_breaker_tripped") or []
+                self.rerun_logger.log_circuit_breaker(tick, tripped)
+                if self.flags.cost_tracking_enabled:
+                    stats = self.cost_tracker.stats()
+                    self.rerun_logger.log_cost(
+                        tick,
+                        cost_usd=stats.get("daily_spent_usd", 0.0),
+                        daily_budget_usd=stats.get("daily_budget_usd", 0.0),
+                    )
+            except Exception:
+                pass
         except Exception:
             pass
 
