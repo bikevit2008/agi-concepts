@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import copy
+import time
 from dataclasses import dataclass, field
 from typing import Any, Callable, Coroutine, Dict, List, Optional
 
@@ -55,6 +56,7 @@ class ConsciousnessLoop:
     _reflection_callbacks: List[Callable[[Dict[str, Any]], Coroutine[Any, Any, None]]] = field(default_factory=list)
     _runtime_defaults: Optional[RuntimeDefaults] = None
     _reflection_interval: int = 5
+    _last_tick_time: Optional[float] = None  # wall-clock time of last tick start (monotonic seconds)
 
     def __post_init__(self) -> None:
         self._runtime_defaults = copy.deepcopy(self.settings.runtime_state)
@@ -113,6 +115,17 @@ class ConsciousnessLoop:
 
     async def _tick_inner(self) -> None:
         """Inner tick logic, separated so _tick can catch all errors."""
+        # Compute dt from actual wall-clock time (Bug #1 fix)
+        now = time.monotonic()
+        if self._last_tick_time is None:
+            dt = self.settings.consciousness_loop.tick_interval_sec
+        else:
+            dt = now - self._last_tick_time
+        # Cap dt to prevent timing spikes from causing excessive decay;
+        # guard against negative dt (clock edge case)
+        dt = max(0.0, min(dt, 5.0 * self.settings.consciousness_loop.tick_interval_sec))
+        self._last_tick_time = now
+
         # Check for stimulus
         stimulus: Optional[str] = None
         try:
@@ -182,19 +195,14 @@ class ConsciousnessLoop:
 
         # Hysteresis decay (every tick, even idle)
         if self.flags.hysteresis_enabled:
-            self.hysteresis.tick()
+            self.hysteresis.tick(dt, reference_interval=self.settings.consciousness_loop.tick_interval_sec)
 
         # Compute runtime delta from hysteresis
         if self.flags.runtime_effects_enabled:
-            # Reset to defaults first, then apply hysteresis effects
+            # Soft decay toward defaults — preserves accumulated effects across ticks
             defaults = self._runtime_defaults
             if defaults:
-                self.runtime_state.temperature = defaults.temperature
-                self.runtime_state.context_window = defaults.context_window
-                self.runtime_state.processing_latency = defaults.processing_latency
-                self.runtime_state.bandwidth = defaults.bandwidth
-                self.runtime_state.attention_focus = defaults.attention_focus
-                self.runtime_state.energy_level = defaults.energy_level
+                self.runtime_state.decay_toward_defaults(defaults, rate=0.1)
 
             delta = self.hysteresis.compute_runtime_delta(self.flags)
             if delta:

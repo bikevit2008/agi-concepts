@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, fields
-from typing import Any, Dict
+from typing import TYPE_CHECKING, Any, Dict
+
+if TYPE_CHECKING:
+    from src.config.settings import RuntimeDefaults
 
 
 @dataclass
@@ -53,6 +56,24 @@ class RuntimeState:
                     setattr(self, key, current + int(value))
                 else:
                     setattr(self, key, current + value)
+        self.clamp()
+
+    def decay_toward_defaults(self, defaults: RuntimeDefaults, rate: float = 0.1) -> None:
+        """Softly decay each field toward its default baseline.
+
+        Uses exponential moving toward baseline:
+            x_new = x + (default - x) * rate
+
+        This is unconditionally stable for 0 < rate <= 1.0 — it never overshoots
+        or oscillates. The 'body' retains memory of previous physical state,
+        unlike a hard reset which erases all accumulated effects each tick.
+        """
+        self.temperature += (defaults.temperature - self.temperature) * rate
+        self.context_window = int(self.context_window + (defaults.context_window - self.context_window) * rate)
+        self.processing_latency += (defaults.processing_latency - self.processing_latency) * rate
+        self.bandwidth += (defaults.bandwidth - self.bandwidth) * rate
+        self.attention_focus += (defaults.attention_focus - self.attention_focus) * rate
+        self.energy_level += (defaults.energy_level - self.energy_level) * rate
         self.clamp()
 
     def diff(self, other: RuntimeState) -> Dict[str, Any]:

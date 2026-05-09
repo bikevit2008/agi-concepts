@@ -163,6 +163,14 @@ class ConsciousnessTeam:
                     memory_data = _parse_structured(resp.content, MemoryResult)
                     if memory_data:
                         result["memory"] = memory_data.model_dump()
+                        # Post-processing: detect hallucinated memories (Bug #4)
+                        if memory_data.recalled_memories and not self.memories:
+                            logger.warning(
+                                "memory_hallucination_detected",
+                                recalled_count=len(memory_data.recalled_memories),
+                                stored_count=0,
+                            )
+                            memory_data.recalled_memories = []
                         if memory_data.new_memory_to_store:
                             self.memories.append(memory_data.new_memory_to_store)
             except Exception as e:
@@ -245,7 +253,14 @@ class ConsciousnessTeam:
                     )
                 result = reflection.model_dump()
                 # Self-stimulate hysteresis channels
+                # Only CAP positive (harmful) stimulation; negative (self-soothing) is unlimited
                 if reflection.hysteresis_stimuli:
+                    positive_stim = {k: v for k, v in reflection.hysteresis_stimuli.items() if v > 0}
+                    total_pos = sum(positive_stim.values())
+                    if total_pos > 0.1:
+                        scale = 0.1 / total_pos
+                        for k in positive_stim:
+                            reflection.hysteresis_stimuli[k] *= scale
                     for channel, intensity in reflection.hysteresis_stimuli.items():
                         self.hysteresis.stimulate(channel, intensity)
                     logger.info("reflection_self_stimulated", stimuli=reflection.hysteresis_stimuli)

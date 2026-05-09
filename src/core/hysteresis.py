@@ -43,9 +43,16 @@ class HysteresisChannel:
         self.value += max(self.accumulation_rate, intensity)
         self.value = min(1.0, self.value)
 
-    def tick(self) -> None:
-        """Decay value by one tick. Called every consciousness loop tick."""
-        self.value -= self.decay_rate
+    def tick(self, dt: float = 1.0, reference_interval: float = 2.0) -> None:
+        """Decay value proportional to elapsed wall-clock time.
+
+        dt is the actual time in seconds since the last tick.
+        decay_rate is calibrated for reference_interval (default 2s ticks).
+        Normalizing dt/reference_interval preserves original parameter semantics
+        while fixing the death spiral: fatigue-induced latency no longer
+        reduces decay frequency (Bug #1).
+        """
+        self.value -= self.decay_rate * (dt / reference_interval)
         self.value = max(0.0, self.value)
 
     def reset(self) -> None:
@@ -82,10 +89,13 @@ class HysteresisEngine:
                 engine.channels[channel_name] = HysteresisChannel.from_params(channel_name, params)
         return engine
 
-    def tick(self) -> None:
-        """Decay all channels by one tick."""
+    def tick(self, dt: float = 1.0, reference_interval: float = 2.0) -> None:
+        """Decay all channels proportional to elapsed wall-clock time dt (seconds).
+        
+        Normalized to reference_interval to preserve original decay_rate calibration.
+        """
         for ch in self.channels.values():
-            ch.tick()
+            ch.tick(dt, reference_interval)
 
     def stimulate(self, channel_name: str, intensity: float = 1.0) -> None:
         """Stimulate a specific channel."""
