@@ -156,12 +156,21 @@ def check_circuit_breaker_tripped(ctx: Dict[str, Any]) -> Tuple[bool, str]:
 # ---------------------------------------------------------------------------
 
 
+# Lazy import to avoid pulling regex compilation into modules that don't
+# enable the constitution; the function itself is light.
+def _injection_check(ctx: Dict[str, Any]) -> Tuple[bool, str]:
+    from src.governance.prompt_injection import check_tool_args_injection_risk
+
+    return check_tool_args_injection_risk(ctx)
+
+
 CHECK_REGISTRY: Dict[str, CheckFn] = {
     "stimulation_max_intensity": check_stimulation_max_intensity,
     "stimulation_channel_whitelist": check_stimulation_channel_whitelist,
     "reflection_self_abuse": check_reflection_self_abuse,
     "tool_deny_list": check_tool_deny_list,
     "tool_args_no_secrets": check_tool_args_no_secrets,
+    "tool_args_injection_risk": _injection_check,
     "cost_budget_exceeded": check_cost_budget_exceeded,
     "circuit_breaker_tripped": check_circuit_breaker_tripped,
 }

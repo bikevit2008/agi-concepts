@@ -72,3 +72,15 @@ constitution:
       text: "Tool arguments must not include credentials / PII patterns"
       check_function: tool_args_no_secrets
       applies_to: ["tool"]
+
+    - id: TOOL_ARGS_NO_PROMPT_INJECTION
+      category: Safety
+      severity: high
+      text: >-
+        Tool arguments must not contain prompt-injection patterns
+        (instruction-override phrases, role-spoof markers, jailbreak
+        labels, or Base64-encoded versions of the same).
+      check_function: tool_args_injection_risk
+      params:
+        threshold: 0.7
+      applies_to: ["tool"]

@@ -1,0 +1,118 @@
+# Grafana alerting rules for the consciousness system.
+# Provisioned automatically; edit + grafana reload to update.
+
+apiVersion: 1
+
+groups:
+  - orgId: 1
+    name: consciousness-core
+    folder: Consciousness
+    interval: 1m
+    rules:
+      - uid: consciousness-stress-saturation
+        title: Hysteresis stress saturated
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: prometheus
+            model:
+              refId: A
+              expr: 'avg_over_time(consciousness_consciousness_hysteresis_value{channel="stress"}[5m])'
+              instant: false
+              intervalMs: 30000
+              maxDataPoints: 43200
+          - refId: B
+            relativeTimeRange:
+              from: 0
+              to: 0
+            datasourceUid: __expr__
+            model:
+              refId: B
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator:
+                    params: [0.9]
+                    type: gt
+                  operator: { type: and }
+                  reducer: { type: last, params: [] }
+                  type: query
+        noDataState: NoData
+        execErrState: Error
+        for: 5m
+        annotations:
+          summary: "Stress channel above 0.9 for 5+ minutes"
+          description: >-
+            Hysteresis 'stress' has been averaging above 0.9 for the last
+            5 minutes. The homeostatic engine should be pulling it down;
+            if not, governance / circuit breaker may be blocking
+            recovery, or feedback loops are dominant. Investigate.
+
+      - uid: consciousness-fatigue-saturation
+        title: Hysteresis fatigue saturated
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange: { from: 600, to: 0 }
+            datasourceUid: prometheus
+            model:
+              refId: A
+              expr: 'avg_over_time(consciousness_consciousness_hysteresis_value{channel="fatigue"}[5m])'
+              instant: false
+          - refId: B
+            relativeTimeRange: { from: 0, to: 0 }
+            datasourceUid: __expr__
+            model:
+              refId: B
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator: { params: [0.9], type: gt }
+                  operator: { type: and }
+                  reducer: { type: last, params: [] }
+                  type: query
+        noDataState: NoData
+        execErrState: Error
+        for: 5m
+        annotations:
+          summary: "Fatigue channel above 0.9 for 5+ minutes"
+          description: >-
+            Long-running fatigue saturation is the canonical death-spiral
+            signature. Recovery should kick in via FORCE_SLEEP; if not,
+            check sleep_manager + recovery_policy state.
+
+      - uid: consciousness-tick-rate-low
+        title: Tick rate below 30/min
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange: { from: 300, to: 0 }
+            datasourceUid: prometheus
+            model:
+              refId: A
+              expr: 'rate(consciousness_consciousness_ticks_total[5m]) * 60'
+              instant: false
+          - refId: B
+            relativeTimeRange: { from: 0, to: 0 }
+            datasourceUid: __expr__
+            model:
+              refId: B
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator: { params: [30], type: lt }
+                  operator: { type: and }
+                  reducer: { type: last, params: [] }
+                  type: query
+        noDataState: NoData
+        execErrState: Error
+        for: 2m
+        annotations:
+          summary: "Consciousness tick rate < 30/min"
+          description: >-
+            Loop is producing fewer than 30 ticks per minute. Either it
+            crashed or is severely throttled (high processing_latency).
+            Check loop logs and runtime_state.processing_latency.
