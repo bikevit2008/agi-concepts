@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 39,
+  "title": "AGI Consciousness — Overview",
+  "uid": "consciousness-overview",
+  "tags": ["consciousness"],
+  "timezone": "browser",
+  "refresh": "5s",
+  "time": {"from": "now-15m", "to": "now"},
+  "panels": [
+    {
+      "id": 1,
+      "type": "timeseries",
+      "title": "Hysteresis channel values",
+      "gridPos": {"x": 0, "y": 0, "w": 12, "h": 8},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [
+        {
+          "expr": "consciousness_consciousness_hysteresis_value",
+          "legendFormat": "{{channel}}",
+          "refId": "A"
+        }
+      ],
+      "options": {"legend": {"displayMode": "list", "placement": "bottom"}}
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Ticks per minute",
+      "gridPos": {"x": 12, "y": 0, "w": 12, "h": 8},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [
+        {
+          "expr": "rate(consciousness_consciousness_ticks_total[1m]) * 60",
+          "legendFormat": "ticks/min",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "traces",
+      "title": "Tick spans",
+      "gridPos": {"x": 0, "y": 8, "w": 24, "h": 10},
+      "datasource": {"type": "tempo", "uid": "tempo"},
+      "targets": [
+        {
+          "queryType": "traceql",
+          "query": "{ name=\"consciousness.tick\" }",
+          "refId": "A"
+        }
+      ]
+    }
+  ]
+}

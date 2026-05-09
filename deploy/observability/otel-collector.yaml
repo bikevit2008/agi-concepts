@@ -1,0 +1,54 @@
+# OpenTelemetry Collector config — receives OTLP, forwards to Tempo (traces)
+# and exposes Prometheus-scrapable metrics on :8889.
+
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  batch:
+    timeout: 5s
+    send_batch_size: 1024
+
+  # Attach service.name / service.version in case the SDK didn't
+  resource:
+    attributes:
+      - key: service.namespace
+        value: consciousness
+        action: insert
+
+exporters:
+  # Traces → Tempo (gRPC OTLP)
+  otlp/tempo:
+    endpoint: tempo:4317
+    tls:
+      insecure: true
+
+  # Metrics → Prometheus exporter endpoint
+  prometheus:
+    endpoint: 0.0.0.0:8889
+    namespace: consciousness
+
+  # Debug logging (dev only — disable in prod)
+  debug:
+    verbosity: basic
+
+service:
+  telemetry:
+    logs:
+      level: info
+
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [resource, batch]
+      exporters: [otlp/tempo]
+
+    metrics:
+      receivers: [otlp]
+      processors: [resource, batch]
+      exporters: [prometheus]
