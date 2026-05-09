@@ -14,6 +14,12 @@ from src.contracts.governance import (
     NullCircuitBreaker,
     NullGovernanceKernel,
 )
+from src.contracts.memory import (
+    IMemoryStore,
+    IProvenanceTracker,
+    NullMemoryStore,
+    NullProvenanceTracker,
+)
 from src.contracts.persistence import (
     ICheckpoint,
     IEventStore,
@@ -28,6 +34,13 @@ from src.engine.circuit_breaker import SaturationCircuitBreaker
 from src.engine.homeostatic_hysteresis import HomeostaticHysteresisEngine
 from src.governance.kernel import DeterministicGovernanceKernel, GovernancePolicy
 from src.logging.setup import get_logger, setup_logging
+from src.persistence.embedder import (
+    HashingEmbedder,
+    IEmbedder,
+    SentenceTransformerEmbedder,
+)
+from src.persistence.memory_store import InMemoryMemoryStore, LanceDbMemoryStore
+from src.persistence.provenance import EmbeddingProvenanceTracker
 from src.persistence.sqlite_checkpoint import SqliteCheckpoint
 from src.persistence.sqlite_event_store import SqliteEventStore
 from src.team.consciousness_team import ConsciousnessTeam
@@ -118,6 +131,19 @@ class ConsciousnessApp(App):
             else NullCheckpoint()
         )
 
+        # Stage 5 — vector memory store + provenance tracker
+        self.embedder: IEmbedder = self._build_embedder()
+        self.memory_store: IMemoryStore = self._build_memory_store(self.embedder)
+        self.provenance_tracker: IProvenanceTracker = (
+            EmbeddingProvenanceTracker(
+                embedder=self.embedder,
+                real_threshold=self.settings.memory.real_threshold,
+                uncertain_threshold=self.settings.memory.uncertain_threshold,
+            )
+            if self.flags.provenance_tracking_enabled
+            else NullProvenanceTracker()
+        )
+
         self.team = ConsciousnessTeam(
             model_settings=self.settings.model,
             runtime_state=self.runtime_state,
@@ -125,6 +151,8 @@ class ConsciousnessApp(App):
             flags=self.flags,
             event_bus=self.event_bus,
             governance=self.governance,
+            memory_store=self.memory_store,
+            provenance_tracker=self.provenance_tracker,
         )
         self.consciousness_loop = ConsciousnessLoop(
             settings=self.settings,
@@ -140,6 +168,63 @@ class ConsciousnessApp(App):
         )
         self._loop_task: asyncio.Task | None = None
         self._monitor_task: asyncio.Task | None = None
+
+    def _build_embedder(self) -> IEmbedder:
+        """Pick an embedder backend with a graceful degradation chain.
+
+        Production: SentenceTransformerEmbedder (high quality, requires
+        sentence-transformers + torch).
+        Fallback: HashingEmbedder (deterministic, no deps, decent
+        discrimination on near-duplicates).
+        """
+        provider = self.settings.memory.embedding_provider
+        if not self.flags.memory_store_enabled:
+            return HashingEmbedder()
+        if provider == "sentence-transformers":
+            try:
+                return SentenceTransformerEmbedder(
+                    model_name=self.settings.memory.embedding_model,
+                )
+            except Exception as e:
+                logger.warning(
+                    "embedder_fallback_to_hashing",
+                    requested=provider,
+                    error=str(e),
+                )
+                return HashingEmbedder()
+        # Future: openai/openrouter embedder. For now hash fallback.
+        return HashingEmbedder()
+
+    def _build_memory_store(self, embedder: IEmbedder) -> IMemoryStore:
+        """Pick a memory store backend with a graceful degradation chain.
+
+        Production: LanceDbMemoryStore (file-backed, scalable).
+        Fallback: InMemoryMemoryStore (always works).
+        Disabled: NullMemoryStore (drops all writes).
+        """
+        if not self.flags.memory_store_enabled:
+            return NullMemoryStore()
+        if self.settings.memory.backend == "lancedb":
+            try:
+                return LanceDbMemoryStore(
+                    uri=self.settings.memory.lancedb_uri,
+                    table_name=self.settings.memory.table_name,
+                    embedder=embedder,
+                    real_threshold=self.settings.memory.real_threshold,
+                    uncertain_threshold=self.settings.memory.uncertain_threshold,
+                )
+            except Exception as e:
+                logger.warning("memory_store_fallback_to_inmemory", error=str(e))
+                return InMemoryMemoryStore(
+                    embedder=embedder,
+                    real_threshold=self.settings.memory.real_threshold,
+                    uncertain_threshold=self.settings.memory.uncertain_threshold,
+                )
+        return InMemoryMemoryStore(
+            embedder=embedder,
+            real_threshold=self.settings.memory.real_threshold,
+            uncertain_threshold=self.settings.memory.uncertain_threshold,
+        )
 
     async def on_mount(self) -> None:
         # Setup logging

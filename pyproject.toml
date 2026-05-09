@@ -13,7 +13,15 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-persistence = ["lancedb>=0.15"]
+persistence = [
+    "lancedb>=0.15",
+    "pyarrow>=16",
+]
+memory = [
+    "lancedb>=0.15",
+    "pyarrow>=16",
+    "sentence-transformers>=3.0",
+]
 bus = ["nats-py>=0.0.5"]
 observability = [
     "rerun-sdk>=0.20",
@@ -31,7 +39,7 @@ ml = [
     "statsmodels>=0.14",
 ]
 all = [
-    "agi-consciousness[persistence,bus,observability,hysteresis,ml]",
+    "agi-consciousness[persistence,memory,bus,observability,hysteresis,ml]",
 ]
 
 [project.scripts]

@@ -7,4 +7,10 @@ build/
 # logs/*.json
 # logs/*.log
 data/*.db
+data/*.db-wal
+data/*.db-shm
+data/*.lance
+data/*.lance/
+data/memories.lance/
+data/tool_audit.jsonl
 .env

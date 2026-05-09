@@ -20,6 +20,14 @@ from src.contracts.governance import (
     NullGovernanceKernel,
     StimulationRequest,
 )
+from src.contracts.memory import (
+    IMemoryStore,
+    IProvenanceTracker,
+    MemoryEntry,
+    NullMemoryStore,
+    NullProvenanceTracker,
+    ProvenanceVerdict,
+)
 from src.core.event_bus import EventBus
 from src.core.hysteresis import HysteresisEngine
 from src.core.runtime_state import RuntimeState
@@ -45,6 +53,10 @@ class ConsciousnessTeam:
 
     # Stage 3 — governance kernel (Null impl when disabled, allows everything)
     governance: IGovernanceKernel = field(default_factory=NullGovernanceKernel)
+
+    # Stage 5 — vector memory store + provenance tracker (Null impl when disabled)
+    memory_store: IMemoryStore = field(default_factory=NullMemoryStore)
+    provenance_tracker: IProvenanceTracker = field(default_factory=NullProvenanceTracker)
 
     # Internal state
     memories: List[str] = field(default_factory=list)
@@ -135,6 +147,8 @@ class ConsciousnessTeam:
             "attention_focus": rt.attention_focus,
             "energy_level": rt.energy_level,
             "stored_memories": self.memories[-20:],
+            "store_size": self.memory_store.count() if self.flags.memory_store_enabled else 0,
+            "pre_retrieved_memories": [],  # populated per-call by process_stimulus_sync
         }
 
         # Planning
@@ -214,27 +228,101 @@ class ConsciousnessTeam:
                 logger.error("agent_error", agent="Emotion", error=str(e))
                 result["emotion_error"] = str(e)
 
-        # 3. Memory
+        # 3. Memory — Stage 5: retrieval-first architecture.
+        # Step 3a: Pre-retrieve real candidates from the vector store.
+        # Step 3b: Inject ONLY real candidates into the LLM context.
+        # Step 3c: Verify the LLM's "recalled" outputs against the store.
         memory_data: Optional[MemoryResult] = None
         if self.flags.memory_enabled:
             try:
-                memory_input = _build_memory_input(stimulus, perception_data, emotion_data)
-                logger.info("agent_run", agent="Memory")
+                # 3a — vector retrieval before LLM call
+                pre_retrieved: List[MemoryEntry] = []
+                if self.flags.memory_store_enabled and self.memory_store.count() > 0:
+                    recalled = self.memory_store.retrieve(
+                        query=stimulus,
+                        limit=5,
+                        min_similarity=0.0,
+                    )
+                    pre_retrieved = [
+                        r.entry for r in recalled
+                        if r.verdict in (ProvenanceVerdict.REAL, ProvenanceVerdict.UNCERTAIN)
+                    ]
+                    self._memory_agent.session_state["pre_retrieved_memories"] = [
+                        {
+                            "content": e.content,
+                            "source": e.source,
+                            "similarity": next(
+                                (r.similarity for r in recalled if r.entry.id == e.id), 0.0
+                            ),
+                        }
+                        for e in pre_retrieved
+                    ]
+
+                # 3b — run the agent (it sees ONLY real, retrieved candidates)
+                memory_input = _build_memory_input(
+                    stimulus, perception_data, emotion_data, pre_retrieved
+                )
+                logger.info(
+                    "agent_run",
+                    agent="Memory",
+                    pre_retrieved=len(pre_retrieved),
+                    store_size=self.memory_store.count(),
+                )
                 resp = self._memory_agent.run(memory_input)
+
                 if resp and resp.content is not None:
                     memory_data = _parse_structured(resp.content, MemoryResult)
                     if memory_data:
-                        result["memory"] = memory_data.model_dump()
-                        # Post-processing: detect hallucinated memories (Bug #4)
-                        if memory_data.recalled_memories and not self.memories:
+                        # 3c — provenance verification on agent's claimed recalls
+                        if (
+                            self.flags.provenance_tracking_enabled
+                            and memory_data.recalled_memories
+                        ):
+                            store_entries = (
+                                self.memory_store.all_entries()
+                                if hasattr(self.memory_store, "all_entries")
+                                else [
+                                    MemoryEntry(id=str(i), content=c, source="legacy")
+                                    for i, c in enumerate(self.memory_store.all_contents())
+                                ]
+                            )
+                            verified: List[str] = []
+                            verdicts: Dict[str, str] = {}
+                            for recalled_text in memory_data.recalled_memories:
+                                v = self.provenance_tracker.verify_recall(
+                                    recalled_text, store_entries
+                                )
+                                verdicts[recalled_text[:80]] = v.value
+                                if v in (ProvenanceVerdict.REAL, ProvenanceVerdict.UNCERTAIN):
+                                    verified.append(recalled_text)
+                            memory_data.recalled_memories = verified
+                            if verdicts:
+                                result["memory_provenance"] = verdicts
+
+                        # Post-processing: legacy hallucination guard (Bug #4 belt + suspenders)
+                        if memory_data.recalled_memories and not self.memories and not pre_retrieved:
                             logger.warning(
                                 "memory_hallucination_detected",
                                 recalled_count=len(memory_data.recalled_memories),
                                 stored_count=0,
                             )
                             memory_data.recalled_memories = []
+
+                        # Persist new memory in BOTH the legacy list and the vector store
                         if memory_data.new_memory_to_store:
                             self.memories.append(memory_data.new_memory_to_store)
+                            if self.flags.memory_store_enabled:
+                                self.memory_store.store(
+                                    MemoryEntry(
+                                        id="",  # store auto-generates
+                                        content=memory_data.new_memory_to_store,
+                                        source="memory_agent",
+                                        emotion_associations=memory_data.emotional_associations or {},
+                                        confidence=float(memory_data.relevance_score or 0.5),
+                                    )
+                                )
+
+                        result["memory"] = memory_data.model_dump()
             except Exception as e:
                 logger.error("agent_error", agent="Memory", error=str(e))
                 result["memory_error"] = str(e)
@@ -524,12 +612,19 @@ def _build_memory_input(
     stimulus: str,
     perception: Optional[PerceptionResult],
     emotion: Optional[EmotionState],
+    pre_retrieved: Optional[List[MemoryEntry]] = None,
 ) -> str:
     parts = [f"Stimulus: {stimulus}"]
     if perception:
         parts.append(f"Perception summary: {perception.content_summary}")
     if emotion:
         parts.append(f"Current emotion: {emotion.primary_emotion} (intensity={emotion.intensity})")
+    if pre_retrieved:
+        parts.append("=== Pre-retrieved REAL stored memories (use ONLY these for recall) ===")
+        for i, entry in enumerate(pre_retrieved, 1):
+            parts.append(f"  [{i}] (source={entry.source}) {entry.content}")
+    else:
+        parts.append("=== Pre-retrieved memories: NONE — do NOT fabricate; recalled_memories must be empty list ===")
     return "\n".join(parts)
 
 
