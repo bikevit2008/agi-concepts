@@ -215,7 +215,8 @@
 | 11 | ✅ done | (prev) | 2026-05-09 | Constitutional Governance Kernel (YAML + 7 policies) |
 | 12 | ✅ done | (prev) | 2026-05-09 | ML Regulators (Shannon entropy + CSD + rule-based recovery) |
 | 13 | ✅ done | (prev) | 2026-05-09 | Experiment harness + E2E / falsifiable / ablation tests |
-| 14 | ✅ done | (this) | 2026-05-09 | Production observability bundle (Tempo + Prometheus + Grafana) |
+| 14 | ✅ done | (prev) | 2026-05-09 | Production observability bundle (Tempo + Prometheus + Grafana) |
+| 15 | ✅ done | (this) | 2026-05-09 | LLM-driven REM abstractions (HDBSCAN + Generative-Agents reflection + provenance + constitution gate) |
 
 ## Архитектурный слой контрактов
 

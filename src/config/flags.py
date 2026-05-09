@@ -73,6 +73,9 @@ class FeatureFlags:
     # Stage 10 — tools
     tools_enabled: bool = False
 
+    # Stage 15 — LLM-driven REM abstractions (opt-in; requires LLM access)
+    llm_rem_enabled: bool = False
+
     @classmethod
     def from_yaml(cls, path: str | Path) -> FeatureFlags:
         path = Path(path)

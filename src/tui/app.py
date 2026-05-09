@@ -51,10 +51,20 @@ from src.core.consciousness_loop import ConsciousnessLoop
 from src.core.event_bus import EventBus, EventType
 from src.core.hysteresis import HysteresisEngine
 from src.core.runtime_state import RuntimeState
+from src.agents.reflection_consolidator import (
+    create_reflection_consolidator_agent,
+)
 from src.engine.circadian import CircadianConfig, CircadianSleepManager
 from src.engine.circuit_breaker import SaturationCircuitBreaker
 from src.engine.homeostatic_hysteresis import HomeostaticHysteresisEngine
+from src.engine.llm_memory_consolidator import LlmMemoryConsolidator
+from src.engine.memory_clusterer import (
+    DensityFallbackClusterer,
+    HdbscanClusterer,
+    IMemoryClusterer,
+)
 from src.engine.memory_consolidator import HebbianMemoryConsolidator
+from src.engine.reflection_invoker import build_agno_reflection_invoker
 from src.ml.collapse_forecaster import CsdCollapseForecaster
 from src.ml.recovery_policy import RuleBasedRecoveryPolicy
 from src.ml.rumination_detector import ShannonRuminationDetector
@@ -217,11 +227,7 @@ class ConsciousnessApp(App):
             if self.flags.sleep_mode_enabled
             else NullSleepManager()
         )
-        self.memory_consolidator: IMemoryConsolidator = (
-            HebbianMemoryConsolidator(memory_store=self.memory_store)
-            if self.flags.memory_consolidation_enabled
-            else NullMemoryConsolidator()
-        )
+        self.memory_consolidator: IMemoryConsolidator = self._build_memory_consolidator()
 
         # Stage 12 — ML regulators
         self.rumination_detector: IRuminationDetector = (
@@ -310,6 +316,61 @@ class ConsciousnessApp(App):
                 return HashingEmbedder()
         # Future: openai/openrouter embedder. For now hash fallback.
         return HashingEmbedder()
+
+    def _build_memory_consolidator(self) -> IMemoryConsolidator:
+        """Pick the right consolidator backend.
+
+        Decision tree:
+          memory_consolidation_enabled = false → Null
+          else if llm_rem_enabled = true       → LlmMemoryConsolidator
+          else                                 → HebbianMemoryConsolidator
+        """
+        if not self.flags.memory_consolidation_enabled:
+            return NullMemoryConsolidator()
+        if not self.flags.llm_rem_enabled:
+            return HebbianMemoryConsolidator(memory_store=self.memory_store)
+
+        # LLM-driven REM
+        clusterer: IMemoryClusterer
+        if self.settings.sleep.rem_clusterer_backend == "hdbscan":
+            try:
+                clusterer = HdbscanClusterer(
+                    min_cluster_size=self.settings.sleep.rem_min_cluster_size,
+                )
+            except Exception as e:
+                logger.warning("hdbscan_unavailable_fallback", error=str(e))
+                clusterer = DensityFallbackClusterer(
+                    min_cluster_size=self.settings.sleep.rem_min_cluster_size,
+                )
+        else:
+            clusterer = DensityFallbackClusterer(
+                min_cluster_size=self.settings.sleep.rem_min_cluster_size,
+            )
+
+        try:
+            agent = create_reflection_consolidator_agent(self.settings.model)
+            invoker = build_agno_reflection_invoker(
+                agent=agent,
+                cost_tracker=self.cost_tracker,
+                primary_model_id=self.settings.model.id,
+            )
+        except Exception as e:
+            logger.warning("reflection_agent_unavailable", error=str(e))
+            invoker = None
+
+        return LlmMemoryConsolidator(
+            memory_store=self.memory_store,
+            embedder=self.embedder,
+            clusterer=clusterer,
+            reflection_invoker=invoker,
+            provenance_tracker=self.provenance_tracker,
+            auditor=self.constitutional_auditor,
+            cost_tracker=self.cost_tracker,
+            min_cluster_size=self.settings.sleep.rem_min_cluster_size,
+            max_clusters_per_cycle=self.settings.sleep.rem_max_clusters_per_cycle,
+            min_provenance_similarity=self.settings.sleep.rem_min_provenance_similarity,
+            dedup_theme_ttl_seconds=self.settings.sleep.rem_dedup_theme_ttl_seconds,
+        )
 
     def _governance_state_provider(self) -> Dict[str, Any]:
         """Snapshot of state the constitution may reference in its checks.

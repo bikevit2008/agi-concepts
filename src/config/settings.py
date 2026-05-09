@@ -144,7 +144,10 @@ class BusSettings:
 
 @dataclass
 class SleepSettings:
-    """Stage 9 — circadian rhythm + sleep mode."""
+    """Stage 9 — circadian rhythm + sleep mode.
+
+    Stage 15 — LLM REM-consolidation knobs.
+    """
 
     enabled: bool = False  # off by default — opt-in
     awake_seconds: float = 4 * 3600.0  # 4 hours awake
@@ -153,6 +156,12 @@ class SleepSettings:
     pressure_to_wake_threshold: float = 0.2
     nrem_fraction: float = 0.7  # of sleep time spent in NREM
     suppress_llm_during_sleep: bool = True
+    # LLM consolidation
+    rem_min_cluster_size: int = 3
+    rem_max_clusters_per_cycle: int = 5
+    rem_min_provenance_similarity: float = 0.4
+    rem_dedup_theme_ttl_seconds: float = 300.0
+    rem_clusterer_backend: str = "hdbscan"  # "hdbscan" | "density_fallback"
 
 
 @dataclass
