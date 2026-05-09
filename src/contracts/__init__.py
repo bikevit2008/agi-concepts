@@ -37,6 +37,19 @@ from src.contracts.governance import (
     RiskTier,
     StimulationRequest,
 )
+from src.contracts.ml import (
+    CollapseSignal,
+    ICollapseForecaster,
+    IRecoveryPolicy,
+    IRuminationDetector,
+    NullCollapseForecaster,
+    NullRecoveryPolicy,
+    NullRuminationDetector,
+    RecoveryAction,
+    RecoveryDecision,
+    RuminationSignal,
+    WarningLevel,
+)
 from src.contracts.memory import (
     IMemoryStore,
     IProvenanceTracker,
@@ -100,6 +113,18 @@ __all__ = [
     "PolicySeverity",
     "RiskTier",
     "StimulationRequest",
+    # ML
+    "CollapseSignal",
+    "ICollapseForecaster",
+    "IRecoveryPolicy",
+    "IRuminationDetector",
+    "NullCollapseForecaster",
+    "NullRecoveryPolicy",
+    "NullRuminationDetector",
+    "RecoveryAction",
+    "RecoveryDecision",
+    "RuminationSignal",
+    "WarningLevel",
     # Memory
     "IMemoryStore",
     "IProvenanceTracker",

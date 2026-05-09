@@ -44,6 +44,9 @@ class FeatureFlags:
     # Stage 11 — constitutional auditor
     constitution_enabled: bool = True
 
+    # Stage 12 — ML regulators (rumination + collapse + recovery)
+    ml_regulators_enabled: bool = False
+
     # Stage 4 — persistence
     persistence_enabled: bool = True
 

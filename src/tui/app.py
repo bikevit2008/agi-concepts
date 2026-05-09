@@ -23,6 +23,14 @@ from src.contracts.memory import (
     NullMemoryStore,
     NullProvenanceTracker,
 )
+from src.contracts.ml import (
+    ICollapseForecaster,
+    IRecoveryPolicy,
+    IRuminationDetector,
+    NullCollapseForecaster,
+    NullRecoveryPolicy,
+    NullRuminationDetector,
+)
 from src.contracts.observability import (
     IObservabilityCollector,
     NullObservabilityCollector,
@@ -47,6 +55,9 @@ from src.engine.circadian import CircadianConfig, CircadianSleepManager
 from src.engine.circuit_breaker import SaturationCircuitBreaker
 from src.engine.homeostatic_hysteresis import HomeostaticHysteresisEngine
 from src.engine.memory_consolidator import HebbianMemoryConsolidator
+from src.ml.collapse_forecaster import CsdCollapseForecaster
+from src.ml.recovery_policy import RuleBasedRecoveryPolicy
+from src.ml.rumination_detector import ShannonRuminationDetector
 from src.governance.auditor import ConstitutionalAuditor
 from src.governance.constitution import load_constitution
 from src.governance.kernel import DeterministicGovernanceKernel, GovernancePolicy
@@ -212,6 +223,36 @@ class ConsciousnessApp(App):
             else NullMemoryConsolidator()
         )
 
+        # Stage 12 — ML regulators
+        self.rumination_detector: IRuminationDetector = (
+            ShannonRuminationDetector(
+                window_size=self.settings.ml_regulators.rumination_window,
+                warn_threshold=self.settings.ml_regulators.rumination_warn_threshold,
+                crit_threshold=self.settings.ml_regulators.rumination_crit_threshold,
+            )
+            if self.flags.ml_regulators_enabled
+            else NullRuminationDetector()
+        )
+        self.collapse_forecaster: ICollapseForecaster = (
+            CsdCollapseForecaster(
+                window_size=self.settings.ml_regulators.collapse_window,
+                trend_history=self.settings.ml_regulators.collapse_trend_history,
+                ar1_warn_threshold=self.settings.ml_regulators.collapse_ar1_warn_threshold,
+                variance_warn_threshold=self.settings.ml_regulators.collapse_variance_warn_threshold,
+                slope_warn_threshold=self.settings.ml_regulators.collapse_slope_warn_threshold,
+            )
+            if self.flags.ml_regulators_enabled
+            else NullCollapseForecaster()
+        )
+        self.recovery_policy: IRecoveryPolicy = (
+            RuleBasedRecoveryPolicy(
+                calm_intensity=self.settings.ml_regulators.calm_intensity,
+                alert_on_info=self.settings.ml_regulators.alert_on_info,
+            )
+            if self.flags.ml_regulators_enabled
+            else NullRecoveryPolicy()
+        )
+
         self.team = ConsciousnessTeam(
             model_settings=self.settings.model,
             runtime_state=self.runtime_state,
@@ -237,6 +278,9 @@ class ConsciousnessApp(App):
             observability=self.observability,
             sleep_manager=self.sleep_manager,
             memory_consolidator=self.memory_consolidator,
+            rumination_detector=self.rumination_detector,
+            collapse_forecaster=self.collapse_forecaster,
+            recovery_policy=self.recovery_policy,
         )
         self._loop_task: asyncio.Task | None = None
         self._monitor_task: asyncio.Task | None = None

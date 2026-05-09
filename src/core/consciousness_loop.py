@@ -18,6 +18,18 @@ from src.contracts.governance import (
     NullGovernanceKernel,
     StimulationRequest,
 )
+from src.contracts.ml import (
+    CollapseSignal,
+    ICollapseForecaster,
+    IRecoveryPolicy,
+    IRuminationDetector,
+    NullCollapseForecaster,
+    NullRecoveryPolicy,
+    NullRuminationDetector,
+    RecoveryAction,
+    RuminationSignal,
+    WarningLevel,
+)
 from src.contracts.observability import (
     IObservabilityCollector,
     NullObservabilityCollector,
@@ -120,6 +132,11 @@ class ConsciousnessLoop:
     sleep_manager: ISleepManager = field(default_factory=NullSleepManager)
     memory_consolidator: IMemoryConsolidator = field(default_factory=NullMemoryConsolidator)
 
+    # Stage 12 — ML regulators (off by default; Null placeholders)
+    rumination_detector: IRuminationDetector = field(default_factory=NullRuminationDetector)
+    collapse_forecaster: ICollapseForecaster = field(default_factory=NullCollapseForecaster)
+    recovery_policy: IRecoveryPolicy = field(default_factory=NullRecoveryPolicy)
+
     # Internal
     _tick_count: int = 0
     _idle_ticks: int = 0
@@ -203,6 +220,51 @@ class ConsciousnessLoop:
         except Exception as e:
             logger.error("checkpoint_apply_failed", error=str(e))
             return False
+
+    def _apply_recovery(self, decision) -> None:
+        """Act on a RecoveryDecision. Best-effort, non-blocking."""
+        if decision is None or decision.action == RecoveryAction.NONE:
+            return
+        if decision.action == RecoveryAction.ALERT_ONLY:
+            logger.info("recovery_alert", rationale=decision.rationale)
+            return
+        if decision.action == RecoveryAction.FORCE_SLEEP:
+            logger.info("recovery_force_sleep", rationale=decision.rationale)
+            try:
+                self.sleep_manager.force_sleep()
+            except Exception as e:
+                logger.warning("recovery_force_sleep_failed", error=str(e))
+            return
+        if decision.action == RecoveryAction.INJECT_CALM:
+            target = decision.target or "stress"
+            intensity = max(0.01, float(decision.intensity or 0.15))
+            logger.info(
+                "recovery_inject_calm",
+                target=target,
+                intensity=intensity,
+                rationale=decision.rationale,
+            )
+            try:
+                # Negative stimulation = self-soothing, always allowed by governance
+                self.hysteresis.stimulate(target, -intensity)
+            except Exception as e:
+                logger.warning("recovery_inject_calm_failed", error=str(e))
+            return
+        if decision.action == RecoveryAction.RESET_CHANNEL:
+            target = decision.target
+            if target and target in self.hysteresis.channels:
+                logger.info("recovery_reset_channel", target=target)
+                try:
+                    self.hysteresis.channels[target].reset()
+                except Exception as e:
+                    logger.warning("recovery_reset_channel_failed", error=str(e))
+            return
+        if decision.action == RecoveryAction.LOWER_TEMPERATURE:
+            logger.info("recovery_lower_temperature")
+            self.runtime_state.temperature = max(
+                0.1, self.runtime_state.temperature - 0.2
+            )
+            return
 
     def _maybe_consolidate(self, decision) -> None:
         """Run memory consolidation when entering NREM/REM phases.
@@ -505,6 +567,67 @@ class ConsciousnessLoop:
         if self.flags.circuit_breaker_enabled:
             for ch_name, ch in self.hysteresis.channels.items():
                 self.circuit_breaker.observe(ch_name, ch.value, self._tick_count)
+
+        # Stage 12 — ML regulators observation + recovery proposal
+        ml_payload: Dict[str, Any] = {}
+        if self.flags.ml_regulators_enabled:
+            rumination_sig: Optional[RuminationSignal] = None
+            collapse_sigs: List[CollapseSignal] = []
+
+            # Rumination: feed the most recent emotion (or "idle" as default)
+            try:
+                last_emo = (
+                    self.team.emotion_history[-1].get("primary_emotion", "idle")
+                    if self.team.emotion_history
+                    else "idle"
+                )
+                rumination_sig = self.rumination_detector.observe(last_emo, self._tick_count)
+            except Exception as e:
+                logger.warning("rumination_observe_failed", error=str(e))
+
+            # Collapse forecaster: per-channel
+            try:
+                for ch_name, ch in self.hysteresis.channels.items():
+                    collapse_sigs.append(
+                        self.collapse_forecaster.observe(
+                            ch_name, ch.value, self._tick_count
+                        )
+                    )
+            except Exception as e:
+                logger.warning("collapse_observe_failed", error=str(e))
+
+            # Recovery proposal — loop applies it opportunistically
+            try:
+                decision = self.recovery_policy.propose(
+                    rumination=rumination_sig,
+                    collapse=collapse_sigs,
+                    runtime_state=self.runtime_state.to_dict(),
+                )
+                self._apply_recovery(decision)
+            except Exception as e:
+                logger.warning("recovery_propose_failed", error=str(e))
+                decision = None
+
+            ml_payload = {
+                "rumination": (
+                    {
+                        "level": rumination_sig.level.value,
+                        "entropy": rumination_sig.entropy,
+                    }
+                    if rumination_sig
+                    else None
+                ),
+                "collapse_worst": (
+                    {
+                        "level": max(
+                            collapse_sigs, key=lambda s: s.level.value
+                        ).level.value,
+                    }
+                    if collapse_sigs
+                    else None
+                ),
+                "recovery_action": (decision.action.value if decision else None),
+            }
 
         self.runtime_state.clamp()
 

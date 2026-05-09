@@ -156,6 +156,26 @@ class SleepSettings:
 
 
 @dataclass
+class MLRegulatorsSettings:
+    """Stage 12 — rumination detector + collapse forecaster + recovery policy."""
+
+    enabled: bool = False
+    # Rumination
+    rumination_window: int = 30
+    rumination_warn_threshold: float = 0.8  # bits
+    rumination_crit_threshold: float = 0.3
+    # Collapse
+    collapse_window: int = 50
+    collapse_trend_history: int = 20
+    collapse_ar1_warn_threshold: float = 0.6
+    collapse_variance_warn_threshold: float = 0.1
+    collapse_slope_warn_threshold: float = 0.01
+    # Recovery policy
+    calm_intensity: float = 0.15
+    alert_on_info: bool = True
+
+
+@dataclass
 class ToolsSettings:
     """Stage 10 — capability-gated tool registry."""
 
@@ -183,3 +203,4 @@ class Settings:
     bus: BusSettings = field(default_factory=BusSettings)
     sleep: SleepSettings = field(default_factory=SleepSettings)
     tools: ToolsSettings = field(default_factory=ToolsSettings)
+    ml_regulators: MLRegulatorsSettings = field(default_factory=MLRegulatorsSettings)

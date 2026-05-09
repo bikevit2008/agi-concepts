@@ -212,7 +212,8 @@
 | 8 | ✅ done | fac3631 | 2026-05-09 |
 | 9 | ✅ done | (prev) | 2026-05-09 |
 | 10 | ✅ done | e77d087 | 2026-05-09 |
-| 11 | ✅ done | (this) | 2026-05-09 | Constitutional Governance Kernel (YAML + 7 policies) |
+| 11 | ✅ done | (prev) | 2026-05-09 | Constitutional Governance Kernel (YAML + 7 policies) |
+| 12 | ✅ done | (this) | 2026-05-09 | ML Regulators (Shannon entropy + CSD + rule-based recovery) |
 
 ## Архитектурный слой контрактов
 

@@ -18,6 +18,7 @@ from src.config.settings import (
     LoggingSettings,
     LoopSettings,
     MemorySettings,
+    MLRegulatorsSettings,
     ModelSettings,
     ObservabilitySettings,
     PersistenceSettings,
@@ -99,6 +100,9 @@ def load_settings(config_dir: Path | None = None) -> Settings:
     bus = _build_dataclass(BusSettings, data.get("bus", {}))
     sleep = _build_dataclass(SleepSettings, data.get("sleep", {}))
     tools = _build_dataclass(ToolsSettings, data.get("tools", {}))
+    ml_regulators = _build_dataclass(
+        MLRegulatorsSettings, data.get("ml_regulators", {})
+    )
 
     return Settings(
         model=model,
@@ -116,6 +120,7 @@ def load_settings(config_dir: Path | None = None) -> Settings:
         bus=bus,
         sleep=sleep,
         tools=tools,
+        ml_regulators=ml_regulators,
     )
 
 
