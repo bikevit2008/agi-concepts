@@ -12,6 +12,28 @@ dependencies = [
     "rich>=14.0.0",
 ]
 
+[project.optional-dependencies]
+persistence = ["lancedb>=0.15"]
+bus = ["nats-py>=0.0.5"]
+observability = [
+    "rerun-sdk>=0.20",
+    "opentelemetry-api>=1.20",
+    "opentelemetry-sdk>=1.20",
+    "opentelemetry-exporter-otlp>=1.20",
+]
+hysteresis = [
+    "jax>=0.4.20",
+    "diffrax>=0.5.0",
+    "equinox>=0.11.0",
+]
+ml = [
+    "scikit-learn>=1.3",
+    "statsmodels>=0.14",
+]
+all = [
+    "agi-consciousness[persistence,bus,observability,hysteresis,ml]",
+]
+
 [project.scripts]
 consciousness = "src.main:main"
 
