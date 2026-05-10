@@ -220,6 +220,12 @@
 | 16 | ✅ done | (prev) | 2026-05-09 | NATS JetStream testcontainers + Offline-RL Behavior-Cloning recovery policy + dataset builder |
 | 17 | ✅ done | (prev) | 2026-05-09 | Prompt-injection v2 (spotlighting + datamarking + classifier + new constitutional policy) + Grafana alerts |
 | 18 | ✅ done | (this) | 2026-05-10 | Self-skill `.devin/skills/agi-mvp/` — институциональная память для будущих итераций |
+| 19 | ✅ done | 94b422a | 2026-05-10 | Concept docs moved from root to `info/intro_dev/` |
+| 20 | ✅ done | 139d31a | 2026-05-10 | Agno pinned to local/release-compatible `v2.6.5` baseline |
+| 21 | ✅ done | f985170 | 2026-05-10 | Contracts normalized: `IMemoryStore.all_entries()`, deps, Agno `FallbackConfig` |
+| 22 | ✅ done | 892e75b / f95650d | 2026-05-10 | Runtime cleanup: memory store is recall source; team model calls use `AgnoModelInvoker` |
+| 23 | ✅ done | ac4ab13 | 2026-05-10 | Checkpoint restore/snapshot preserves semantic memory state |
+| 24 | ✅ done | d10999a | 2026-05-10 | OpenRouter model cost rates refreshed from May 2026 pricing |
 
 ## Архитектурный слой контрактов
 
