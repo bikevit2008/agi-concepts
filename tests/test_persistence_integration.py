@@ -11,6 +11,7 @@ Verify checkpoint/restore round-trip:
 """
 
 import asyncio
+import sqlite3
 from pathlib import Path
 from unittest.mock import MagicMock
 
@@ -19,7 +20,7 @@ import pytest
 from src.config.flags import FeatureFlags
 from src.config.settings import Settings
 from src.contracts.governance import NullCircuitBreaker, NullGovernanceKernel
-from src.contracts.persistence import NullCheckpoint, NullEventStore
+from src.contracts.persistence import NullCheckpoint, NullEventStore, Snapshot
 from src.core.consciousness_loop import ConsciousnessLoop
 from src.core.event_bus import EventBus
 from src.core.runtime_state import RuntimeState
@@ -33,6 +34,7 @@ def _make_loop(tmp_path: Path, **overrides) -> ConsciousnessLoop:
     settings.persistence.event_store_path = str(tmp_path / "events.db")
     settings.persistence.checkpoint_path = str(tmp_path / "cp.db")
     settings.persistence.checkpoint_every_ticks = overrides.get("checkpoint_every_ticks", 2)
+    settings.persistence.keep_last_n_snapshots = overrides.get("keep_last_n_snapshots", 20)
     flags = overrides.get("flags") or FeatureFlags()
     runtime_state = RuntimeState()
     hysteresis = HomeostaticHysteresisEngine.from_settings(settings.hysteresis)
@@ -98,6 +100,16 @@ def test_tick_writes_stimulus_event_when_processed(tmp_path: Path):
     loop.checkpoint.close()
 
 
+def test_event_store_close_truncates_wal(tmp_path: Path):
+    db_path = tmp_path / "events.db"
+    store = SqliteEventStore(str(db_path), wal_checkpoint_every_seconds=0.0)
+    for i in range(10):
+        store.append(i, "snapshot", {"tick": i})
+    wal_path = tmp_path / "events.db-wal"
+    store.close()
+    assert not wal_path.exists() or wal_path.stat().st_size == 0
+
+
 def test_periodic_checkpoint_saved(tmp_path: Path):
     loop = _make_loop(tmp_path, checkpoint_every_ticks=2)
     asyncio.run(loop._tick())
@@ -110,6 +122,61 @@ def test_periodic_checkpoint_saved(tmp_path: Path):
     assert snap.tick == 2
     loop.event_store.close()
     loop.checkpoint.close()
+
+
+def test_checkpoint_load_at_tick_and_prune(tmp_path: Path):
+    cp = SqliteCheckpoint(str(tmp_path / "cp.db"))
+    try:
+        for tick in (2, 4, 6):
+            cp.save(
+                Snapshot(
+                    tick=tick,
+                    timestamp_ms=tick,
+                    runtime_state={"temperature": tick},
+                    hysteresis={},
+                )
+            )
+
+        assert cp.load_at_tick(5).tick == 4
+        assert cp.prune(before_tick=6) == 2
+        assert cp.load_at_tick(5) is None
+        assert cp.load_latest().tick == 6
+    finally:
+        cp.close()
+
+
+def test_checkpoint_corrupt_payload_falls_back(tmp_path: Path):
+    cp = SqliteCheckpoint(str(tmp_path / "cp.db"))
+    try:
+        conn = sqlite3.connect(str(tmp_path / "cp.db"))
+        conn.execute(
+            "INSERT INTO snapshots (tick, timestamp_ms, payload) VALUES (?, ?, ?)",
+            (7, 123, "{not-json"),
+        )
+        conn.commit()
+        conn.close()
+
+        snap = cp.load_latest()
+        assert snap.tick == 7
+        assert snap.timestamp_ms == 123
+        assert "_decode_error" in snap.extra
+    finally:
+        cp.close()
+
+
+def test_periodic_checkpoint_prunes_to_keep_last_n(tmp_path: Path):
+    loop = _make_loop(tmp_path, checkpoint_every_ticks=1, keep_last_n_snapshots=2)
+    try:
+        for _ in range(4):
+            asyncio.run(loop._tick())
+
+        latest = loop.checkpoint.load_latest()
+        assert latest.tick == 4
+        assert loop.checkpoint.load_at_tick(2) is None
+        assert loop.checkpoint.load_at_tick(3).tick == 3
+    finally:
+        loop.event_store.close()
+        loop.checkpoint.close()
 
 
 def test_checkpoint_restore_round_trip(tmp_path: Path):
@@ -165,3 +232,20 @@ def test_restore_from_empty_checkpoint_returns_false(tmp_path: Path):
     assert loop.restore_from_checkpoint() is False
     loop.event_store.close()
     loop.checkpoint.close()
+
+
+def test_restore_then_continue_keeps_event_sequence_monotonic(tmp_path: Path):
+    loop1 = _make_loop(tmp_path, checkpoint_every_ticks=1)
+    asyncio.run(loop1._tick())
+    first_latest = loop1.event_store.latest_sequence()
+    loop1.event_store.close()
+    loop1.checkpoint.close()
+
+    loop2 = _make_loop(tmp_path, checkpoint_every_ticks=1)
+    try:
+        assert loop2.restore_from_checkpoint() is True
+        asyncio.run(loop2._tick())
+        assert loop2.event_store.latest_sequence() > first_latest
+    finally:
+        loop2.event_store.close()
+        loop2.checkpoint.close()

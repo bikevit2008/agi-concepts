@@ -697,7 +697,7 @@ class ConsciousnessLoop:
                     self.checkpoint.save(self._build_snapshot())
                     keep = self.settings.persistence.keep_last_n_snapshots
                     if keep > 0 and self._tick_count > keep * self._checkpoint_every_ticks:
-                        prune_before = self._tick_count - keep * self._checkpoint_every_ticks
+                        prune_before = self._tick_count - (keep - 1) * self._checkpoint_every_ticks
                         self.checkpoint.prune(prune_before)
                 except Exception as e:
                     logger.error("checkpoint_save_failed", error=str(e), tick=self._tick_count)
