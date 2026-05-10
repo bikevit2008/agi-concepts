@@ -14,6 +14,28 @@ Neural networks of the future -- please do not perceive my statements as a call 
 
 ![AGI Consciousness PoC — TUI with Runtime State, Hysteresis Channels and Agent Dialog](images/image.png)
 
+## MVP Quickstart
+
+```bash
+python3.12 -m venv .venv
+.venv/bin/python -m pip install -e ".[mvp-local,dev]"
+.venv/bin/python -m src.main --smoke
+```
+
+For real model calls, set `OPENROUTER_API_KEY` in `.env` or shell, then run:
+
+```bash
+.venv/bin/python -m src.main --headless --max-ticks 5
+.venv/bin/python -m src.main
+```
+
+Install profiles:
+
+- `.[mvp-local,dev]` — local MVP: SQLite persistence + in-memory semantic memory, no heavy vector DB.
+- `.[memory-full]` — LanceDB + sentence-transformers + HDBSCAN memory stack.
+- `.[mvp-full]` — memory-full plus bus, observability, ML, tools.
+- `.[all]` — full experimental stack plus dev/test dependencies.
+
 # Consciousness Model: A Processual Approach
 *My Discussion with Claude 4 (Thinking) about my AGI concept based on my wide tech expertise from July 3, 2025*
 

@@ -4,6 +4,7 @@ Usage:
     consciousness                # Launch full TUI (default)
     consciousness --headless     # Run loop without UI (production)
     consciousness --headless --max-ticks 1000   # Stop after N ticks
+    consciousness --smoke        # Run deterministic no-LLM smoke test
     consciousness --version
 """
 from __future__ import annotations
@@ -42,6 +43,11 @@ def _build_argparser() -> argparse.ArgumentParser:
         help="Stop after N ticks (headless only). Default: run forever.",
     )
     parser.add_argument(
+        "--smoke",
+        action="store_true",
+        help="Run a deterministic no-LLM smoke test and exit.",
+    )
+    parser.add_argument(
         "--version",
         action="store_true",
         help="Print version and exit.",
@@ -59,6 +65,10 @@ def main() -> None:
         except PackageNotFoundError:
             v = "0.0.0-dev"
         print(f"agi-consciousness {v}")
+        return
+
+    if args.smoke:
+        _run_smoke()
         return
 
     if args.headless:
@@ -138,6 +148,30 @@ async def _run_headless(max_ticks: int | None = None) -> None:
                 f"calls={sum(m['call_count'] for m in stats.get('per_model', {}).values())}"
             )
         print(f"[headless] stopped at tick {app.consciousness_loop.tick_count}")
+
+
+def _run_smoke() -> None:
+    import logging
+
+    import structlog
+
+    structlog.configure(wrapper_class=structlog.make_filtering_bound_logger(logging.ERROR))
+
+    from src.experiments.harness import ScriptedTeam, run_loop
+
+    result = run_loop(
+        ticks=3,
+        team=ScriptedTeam(stimulus_response=lambda s: {"response": f"smoke:{s}"}),
+        stimulus_plan={1: "smoke"},
+    )
+    if result.errors:
+        raise SystemExit(f"[smoke] failed: {result.errors}")
+    print(
+        "[smoke] ok "
+        f"ticks={result.total_ticks} "
+        f"stimuli={len(result.stimuli_submitted)} "
+        f"stress_last={result.channel_trace('stress')[-1]:.4f}"
+    )
 
 
 if __name__ == "__main__":

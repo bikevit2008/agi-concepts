@@ -15,16 +15,18 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-persistence = [
-    "lancedb>=0.15",
-    "pyarrow>=16",
-]
-memory = [
+core = []
+persistence = []
+memory-local = []
+memory-full = [
     "lancedb>=0.15",
     "pyarrow>=16",
     "sentence-transformers>=3.0",
     "hdbscan>=0.8.38",
     "numpy>=1.26",
+]
+memory = [
+    "agi-consciousness[memory-full]",
 ]
 bus = ["nats-py>=0.0.5"]
 observability = [
@@ -50,8 +52,14 @@ dev = [
     "pytest>=8.0",
     "testcontainers>=4.8",
 ]
+mvp-local = [
+    "agi-consciousness[persistence,memory-local]",
+]
+mvp-full = [
+    "agi-consciousness[persistence,memory-full,bus,observability,ml,tools]",
+]
 all = [
-    "agi-consciousness[persistence,memory,bus,observability,hysteresis,ml,tools,dev]",
+    "agi-consciousness[mvp-full,hysteresis,dev]",
 ]
 
 [project.scripts]
