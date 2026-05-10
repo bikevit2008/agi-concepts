@@ -14,7 +14,7 @@ from src.agents.planning import create_planning_agent
 from src.agents.reflection import create_reflection_agent
 from src.config.flags import FeatureFlags
 from src.config.settings import ModelSettings
-from src.contracts.cost import ICostTracker, NullCostTracker, TokenUsage
+from src.contracts.cost import ICostTracker, NullCostTracker
 from src.contracts.governance import (
     GovernanceDecision,
     IGovernanceKernel,
@@ -33,7 +33,7 @@ from src.core.event_bus import EventBus
 from src.core.hysteresis import HysteresisEngine
 from src.core.runtime_state import RuntimeState
 from src.engine.homeostatic_hysteresis import HomeostaticHysteresisEngine
-from src.persistence.cost_aware_agent import record_run_metrics
+from src.persistence.cost_aware_agent import AgnoModelInvoker
 
 logger = structlog.get_logger("consciousness.team")
 
@@ -89,20 +89,17 @@ class ConsciousnessTeam:
         if len(self.state_journal) > 30:
             self.state_journal = self.state_journal[-30:]
 
-    def _record_usage(self, response: Any, agent_name: str) -> None:
-        """Side-channel: extract token usage from RunOutput and report it."""
-        if not self.flags.cost_tracking_enabled:
-            return
-        try:
-            record_run_metrics(
-                response,
-                tracker=self.cost_tracker,
-                agent_name=agent_name,
-                fallback_model_id=self.model_settings.id,
-                tick=self.current_tick,
-            )
-        except Exception as e:
-            logger.warning("cost_record_failed", agent=agent_name, error=str(e))
+    def _run_agent(self, agent: Any, prompt: str, agent_name: str) -> Any:
+        tracker = self.cost_tracker if self.flags.cost_tracking_enabled else NullCostTracker()
+        result = AgnoModelInvoker(
+            agent=agent,
+            cost_tracker=tracker,
+            agent_name=agent_name,
+            primary_model_id=self.model_settings.id,
+        ).invoke(prompt, agent_name=agent_name, tick=self.current_tick)
+        if not result.success:
+            raise RuntimeError(result.error or "model invocation failed")
+        return result.raw
 
     def _stored_memory_count(self) -> int:
         if self.flags.memory_store_enabled:
@@ -215,8 +212,7 @@ class ConsciousnessTeam:
             try:
                 logger.info("agent_run", agent="Perception", stimulus=stimulus[:100])
                 self._perception_agent.model.temperature = self.runtime_state.temperature
-                resp = self._perception_agent.run(stimulus)
-                self._record_usage(resp, "Perception")
+                resp = self._run_agent(self._perception_agent, stimulus, "Perception")
                 if resp and resp.content is not None:
                     perception_data = _parse_structured(resp.content, PerceptionResult)
                     result["perception"] = perception_data.model_dump() if perception_data else str(resp.content)
@@ -231,8 +227,7 @@ class ConsciousnessTeam:
                 emotion_input = _build_emotion_input(stimulus, perception_data)
                 self._emotion_agent.session_state["active_channels"] = self.hysteresis.get_active_channels()
                 logger.info("agent_run", agent="Emotion")
-                resp = self._emotion_agent.run(emotion_input)
-                self._record_usage(resp, "Emotion")
+                resp = self._run_agent(self._emotion_agent, emotion_input, "Emotion")
                 if resp and resp.content is not None:
                     emotion_data = _parse_structured(resp.content, EmotionState)
                     if not emotion_data:
@@ -306,8 +301,7 @@ class ConsciousnessTeam:
                     pre_retrieved=len(pre_retrieved),
                     store_size=self._stored_memory_count(),
                 )
-                resp = self._memory_agent.run(memory_input)
-                self._record_usage(resp, "Memory")
+                resp = self._run_agent(self._memory_agent, memory_input, "Memory")
 
                 if resp and resp.content is not None:
                     memory_data = _parse_structured(resp.content, MemoryResult)
@@ -378,8 +372,7 @@ class ConsciousnessTeam:
                 max_tok = max(64, min(2048, int(1024 * vitality)))
                 self._planning_agent.model.max_tokens = max_tok
                 logger.info("agent_run", agent="Planning", max_tokens=max_tok, vitality=round(vitality, 3))
-                resp = self._planning_agent.run(planning_input)
-                self._record_usage(resp, "Planning")
+                resp = self._run_agent(self._planning_agent, planning_input, "Planning")
                 if resp and resp.content is not None:
                     planning_data = _parse_structured(resp.content, PlanningResult)
                     if planning_data:
@@ -426,8 +419,11 @@ class ConsciousnessTeam:
 
         try:
             logger.info("agent_run", agent="Reflection")
-            resp = self._reflection_agent.run("Reflect on your current internal state.")
-            self._record_usage(resp, "Reflection")
+            resp = self._run_agent(
+                self._reflection_agent,
+                "Reflect on your current internal state.",
+                "Reflection",
+            )
             if resp and resp.content is not None:
                 reflection = _parse_structured(resp.content, ReflectionResult)
                 if not reflection:
@@ -499,8 +495,7 @@ class ConsciousnessTeam:
 
         try:
             logger.info("agent_run", agent="SpontaneousThought")
-            resp = self._planning_agent.run(prompt)
-            self._record_usage(resp, "SpontaneousThought")
+            resp = self._run_agent(self._planning_agent, prompt, "SpontaneousThought")
             if resp and resp.content is not None:
                 thought_data = _parse_structured(resp.content, PlanningResult)
                 if thought_data:
