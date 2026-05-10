@@ -11,7 +11,6 @@ run with feature flags disabled.
 
 from src.persistence.cost_aware_agent import (
     AgnoModelInvoker,
-    build_fallback_config,
     record_run_metrics,
 )
 from src.persistence.cost_tracker import (
@@ -45,6 +44,5 @@ __all__ = [
     "ModelRate",
     "DEFAULT_MODEL_RATES",
     "AgnoModelInvoker",
-    "build_fallback_config",
     "record_run_metrics",
 ]

@@ -163,33 +163,7 @@ class AgnoModelInvoker:
         )
 
 
-def build_fallback_config(
-    fallback_model_ids: List[str],
-) -> Optional[Any]:
-    """Build an Agno FallbackConfig from a list of provider/model strings.
-
-    Imports Agno lazily so this module remains useful in pure-test
-    environments. Returns None on import error or empty list.
-    """
-    if not fallback_model_ids:
-        return None
-    try:
-        from agno.models.fallback import FallbackConfig
-        from agno.models.openrouter import OpenRouter
-    except ImportError:
-        logger.warning("agno_fallback_unavailable")
-        return None
-
-    fallback_models = [OpenRouter(id=mid) for mid in fallback_model_ids]
-    return FallbackConfig(
-        on_error=fallback_models,
-        on_rate_limit=fallback_models,
-        on_context_overflow=fallback_models,
-    )
-
-
 __all__ = [
     "AgnoModelInvoker",
-    "build_fallback_config",
     "record_run_metrics",
 ]

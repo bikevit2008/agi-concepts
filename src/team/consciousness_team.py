@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from typing import Any, Dict, List, Optional
 
 import structlog
@@ -71,11 +71,16 @@ class ConsciousnessTeam:
     _agents_created: bool = False
 
     def __post_init__(self) -> None:
-        self._perception_agent = create_perception_agent(self.model_settings)
-        self._emotion_agent = create_emotion_agent(self.model_settings)
-        self._memory_agent = create_memory_agent(self.model_settings)
-        self._planning_agent = create_planning_agent(self.model_settings)
-        self._reflection_agent = create_reflection_agent(self.model_settings)
+        agent_model_settings = (
+            self.model_settings
+            if self.flags.model_fallback_enabled
+            else replace(self.model_settings, fallback_models=[])
+        )
+        self._perception_agent = create_perception_agent(agent_model_settings)
+        self._emotion_agent = create_emotion_agent(agent_model_settings)
+        self._memory_agent = create_memory_agent(agent_model_settings)
+        self._planning_agent = create_planning_agent(agent_model_settings)
+        self._reflection_agent = create_reflection_agent(agent_model_settings)
         self._agents_created = True
 
     def record_state_snapshot(self) -> None:
