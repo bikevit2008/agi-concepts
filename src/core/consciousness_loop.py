@@ -393,7 +393,10 @@ class ConsciousnessLoop:
         """Inner tick logic, separated so _tick can catch all errors."""
         # Compute dt from actual wall-clock time (Bug #1 fix)
         now = time.monotonic()
-        if self._last_tick_time is None:
+        simulated_dt = getattr(self, "_simulated_dt", None)
+        if simulated_dt is not None:
+            dt = float(simulated_dt)
+        elif self._last_tick_time is None:
             dt = self.settings.consciousness_loop.tick_interval_sec
         else:
             dt = now - self._last_tick_time

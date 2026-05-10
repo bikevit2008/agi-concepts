@@ -242,13 +242,14 @@ class LoopHarness:
             ticks: how many ticks to drive.
             stimulus_plan: optional {tick: stimulus_text} — stimuli queued
                 before that tick runs.
-            simulated_time: when True (default), we rewind
-                `_last_tick_time` before each `_tick()` so the loop
-                computes `dt == tick_interval_sec`. This keeps
+            simulated_time: when True (default), we force the loop to
+                compute `dt == tick_interval_sec`. This keeps
                 experiments independent of real CPU speed.
         """
         loop = self.build()
         tick_dt = loop.settings.consciousness_loop.tick_interval_sec
+        if simulated_time:
+            loop._simulated_dt = tick_dt
         runtime_trace: List[Dict[str, float]] = []
         channel_traces: Dict[str, List[float]] = {
             n: [] for n in loop.hysteresis.channels
