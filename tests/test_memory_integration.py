@@ -99,6 +99,9 @@ def test_memory_pre_retrieves_real_candidates():
     pre_retrieved = captured_state.get("pre_retrieved_memories", [])
     assert len(pre_retrieved) >= 1
     assert any("neural networks" in p["content"] for p in pre_retrieved)
+    stored_memories = captured_state.get("stored_memories", [])
+    assert any("neural networks" in memory for memory in stored_memories)
+    assert team.memories == []
 
 
 def test_memory_provenance_filters_hallucinated_recalls():

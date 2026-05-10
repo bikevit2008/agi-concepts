@@ -104,6 +104,22 @@ class ConsciousnessTeam:
         except Exception as e:
             logger.warning("cost_record_failed", agent=agent_name, error=str(e))
 
+    def _stored_memory_count(self) -> int:
+        if self.flags.memory_store_enabled:
+            try:
+                return self.memory_store.count()
+            except Exception as e:
+                logger.warning("memory_count_failed", error=str(e))
+        return len(self.memories)
+
+    def _stored_memory_contents(self, limit: int) -> List[str]:
+        if self.flags.memory_store_enabled:
+            try:
+                return [entry.content for entry in self.memory_store.all_entries()][-limit:]
+            except Exception as e:
+                logger.warning("memory_contents_failed", error=str(e))
+        return self.memories[-limit:]
+
     def _gated_stimulate(
         self,
         agent: str,
@@ -166,8 +182,8 @@ class ConsciousnessTeam:
             "bandwidth": rt.bandwidth,
             "attention_focus": rt.attention_focus,
             "energy_level": rt.energy_level,
-            "stored_memories": self.memories[-20:],
-            "store_size": self.memory_store.count() if self.flags.memory_store_enabled else 0,
+            "stored_memories": self._stored_memory_contents(20),
+            "store_size": self._stored_memory_count(),
             "pre_retrieved_memories": [],  # populated per-call by process_stimulus_sync
         }
 
@@ -288,7 +304,7 @@ class ConsciousnessTeam:
                     "agent_run",
                     agent="Memory",
                     pre_retrieved=len(pre_retrieved),
-                    store_size=self.memory_store.count(),
+                    store_size=self._stored_memory_count(),
                 )
                 resp = self._memory_agent.run(memory_input)
                 self._record_usage(resp, "Memory")
@@ -316,11 +332,12 @@ class ConsciousnessTeam:
                                 result["memory_provenance"] = verdicts
 
                         # Post-processing: legacy hallucination guard (Bug #4 belt + suspenders)
-                        if memory_data.recalled_memories and not self.memories and not pre_retrieved:
+                        stored_count = self._stored_memory_count()
+                        if memory_data.recalled_memories and stored_count == 0 and not pre_retrieved:
                             logger.warning(
                                 "memory_hallucination_detected",
                                 recalled_count=len(memory_data.recalled_memories),
-                                stored_count=0,
+                                stored_count=stored_count,
                             )
                             memory_data.recalled_memories = []
 
@@ -465,7 +482,7 @@ class ConsciousnessTeam:
             "attention_focus": rt.attention_focus,
             "current_perception": "",
             "current_emotion": json.dumps(recent_emotions) if recent_emotions else "",
-            "recalled_memories": self.memories[-5:] if self.memories else [],
+            "recalled_memories": self._stored_memory_contents(5),
             "active_channels": active,
         })
 
