@@ -28,8 +28,7 @@ def test_record_increments_daily_spent():
         TokenUsage(model_id="x-ai/grok-4.20", input_tokens=1_000_000, output_tokens=0),
         agent="Test",
     )
-    # 1M input tokens at $3 → exactly $3.00
-    assert abs(t.daily_spent_usd() - 3.0) < 1e-6
+    assert abs(t.daily_spent_usd() - 1.25) < 1e-6
 
 
 def test_record_uses_provided_cost_when_set():
@@ -123,13 +122,11 @@ def test_reset_daily_clears_state():
 
 
 def test_alert_threshold_triggers_once():
-    t = InMemoryCostTracker(daily_budget_usd=10.0, alert_threshold_pct=0.5)
-    # First call brings us to ~$3 — under 50% threshold of $10
+    t = InMemoryCostTracker(daily_budget_usd=4.0, alert_threshold_pct=0.5)
     t.record(TokenUsage(model_id="x-ai/grok-4.20", input_tokens=1_000_000, output_tokens=0), agent="X")
     s1 = t.stats()
     assert s1["alerted"] is False
 
-    # Second call brings us to $6 — past 50% threshold
     t.record(TokenUsage(model_id="x-ai/grok-4.20", input_tokens=1_000_000, output_tokens=0), agent="X")
     s2 = t.stats()
     assert s2["alerted"] is True

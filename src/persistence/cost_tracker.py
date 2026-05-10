@@ -10,7 +10,7 @@ Strategy:
   budget should reset) — we don't run a scheduler, the loop calls it.
 
 Per-model pricing rates are configurable. Defaults are based on OpenRouter
-public pricing (Nov 2025) for the models used by this project. Unknown
+public pricing (May 2026) for the models used by this project. Unknown
 models default to a conservative high-side estimate so we never
 under-bill ourselves into a runaway scenario.
 """
@@ -41,9 +41,9 @@ class ModelRate:
 # Default rates for models commonly used by the project.
 # Values are public-listed rates — adjust if your contract differs.
 DEFAULT_MODEL_RATES: Dict[str, ModelRate] = {
-    # Grok 4.20 family (OpenRouter, Nov 2025 listing)
-    "x-ai/grok-4.20": ModelRate(input_usd_per_mtok=3.0, output_usd_per_mtok=15.0),
-    "xai/grok-4.20": ModelRate(input_usd_per_mtok=3.0, output_usd_per_mtok=15.0),
+    # Grok 4.20 family (OpenRouter, May 2026 listing)
+    "x-ai/grok-4.20": ModelRate(input_usd_per_mtok=1.25, output_usd_per_mtok=2.5),
+    "xai/grok-4.20": ModelRate(input_usd_per_mtok=1.25, output_usd_per_mtok=2.5),
 
     # Claude Sonnet 4 family
     "anthropic/claude-sonnet-4-20250514": ModelRate(
@@ -58,8 +58,12 @@ DEFAULT_MODEL_RATES: Dict[str, ModelRate] = {
     ),
 
     # GPT-4o / GPT-4o-mini
-    "openai/gpt-4o": ModelRate(input_usd_per_mtok=2.5, output_usd_per_mtok=10.0),
-    "openai/gpt-4o-mini": ModelRate(input_usd_per_mtok=0.15, output_usd_per_mtok=0.6),
+    "openai/gpt-4o": ModelRate(
+        input_usd_per_mtok=2.5, output_usd_per_mtok=10.0, cached_usd_per_mtok=1.25
+    ),
+    "openai/gpt-4o-mini": ModelRate(
+        input_usd_per_mtok=0.15, output_usd_per_mtok=0.6, cached_usd_per_mtok=0.075
+    ),
 }
 
 # Conservative fallback for unknown models — assume Sonnet-4 pricing.
