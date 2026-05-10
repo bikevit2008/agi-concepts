@@ -183,13 +183,13 @@ class SqliteEventStore:
     def _maybe_checkpoint(self) -> None:
         """Periodically run `PRAGMA wal_checkpoint(RESTART)` to bound WAL growth."""
         now = time.monotonic()
-        if now - self._last_checkpoint_at < self._wal_checkpoint_interval:
-            return
         try:
             with self._lock:
+                if now - self._last_checkpoint_at < self._wal_checkpoint_interval:
+                    return
                 self._conn.execute("PRAGMA wal_checkpoint(RESTART)")
-            self._last_checkpoint_at = now
-            logger.debug("wal_checkpoint_restart", path=str(self.db_path))
+                self._last_checkpoint_at = now
+                logger.debug("wal_checkpoint_restart", path=str(self.db_path))
         except sqlite3.Error as e:
             logger.warning("wal_checkpoint_failed", error=str(e))
 

@@ -150,7 +150,7 @@ class CodeExecutorTool:
                     "nsjail",
                     "--quiet",
                     "--time_limit", str(int(timeout)),
-                    "--rlimit_as", str(self.memory_limit_mb),
+                    "--rlimit_as", str(self.memory_limit_mb * 1024 * 1024),
                     "--disable_clone_newnet",
                     "--", "/usr/bin/python3", code_path,
                 ],

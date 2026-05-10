@@ -144,10 +144,12 @@ class AgnoModelInvoker:
         model_used = self.primary_model_id
         chain: List[str] = []
         try:
-            details = getattr(response.metrics, "details", None)
-            if isinstance(details, dict) and details:
-                chain = list(details.keys())
-                model_used = chain[-1] if chain else model_used
+            metrics = getattr(response, "metrics", None)
+            if metrics:
+                details = getattr(metrics, "details", None)
+                if isinstance(details, dict) and details:
+                    chain = list(details.keys())
+                    model_used = chain[-1] if chain else model_used
         except Exception:
             pass
 

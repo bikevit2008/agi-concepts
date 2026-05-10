@@ -197,15 +197,16 @@ class CapabilityGatedToolRegistry:
     def _check_rate_limit(self, tool_name: str) -> bool:
         if self.rate_limit_per_minute <= 0:
             return True
-        now = time.monotonic()
-        window = self._calls_window.setdefault(tool_name, [])
-        # Drop entries older than 60s
-        while window and (now - window[0]) > 60.0:
-            window.pop(0)
-        if len(window) >= self.rate_limit_per_minute:
-            return False
-        window.append(now)
-        return True
+        with self._lock:
+            now = time.monotonic()
+            window = self._calls_window.setdefault(tool_name, [])
+            # Drop entries older than 60s
+            while window and (now - window[0]) > 60.0:
+                window.pop(0)
+            if len(window) >= self.rate_limit_per_minute:
+                return False
+            window.append(now)
+            return True
 
     def _audit(
         self,

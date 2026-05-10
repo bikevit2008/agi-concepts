@@ -208,7 +208,7 @@ class LanceDbMemoryStore:
             [
                 pa.field("id", pa.string()),
                 pa.field("content", pa.string()),
-                pa.field("vector", pa.list_(pa.float32(), dim)),
+                pa.field("vector", pa.list_(pa.float32(), list_size=dim)),
                 pa.field("source", pa.string()),
                 pa.field("timestamp_ms", pa.int64()),
                 pa.field("confidence", pa.float32()),

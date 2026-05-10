@@ -7,6 +7,7 @@ datasources:
     url: http://prometheus:9090
     isDefault: true
     editable: false
+    uid: prometheus
 
   - name: Tempo
     type: tempo
@@ -25,3 +26,4 @@ datasources:
       lokiSearch:
         hide: true
     editable: false
+    uid: tempo

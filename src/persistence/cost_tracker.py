@@ -152,14 +152,14 @@ class InMemoryCostTracker:
                 and self._daily_budget_usd > 0
                 and self._daily_spent_usd >= self._daily_budget_usd * self._alert_threshold_pct
             )
-        if should_alert:
-            logger.warning(
-                "cost_alert_threshold",
-                spent_usd=round(self._daily_spent_usd, 4),
-                budget_usd=self._daily_budget_usd,
-                threshold_pct=self._alert_threshold_pct,
-            )
-            self._alerted = True
+            if should_alert:
+                logger.warning(
+                    "cost_alert_threshold",
+                    spent_usd=round(self._daily_spent_usd, 4),
+                    budget_usd=self._daily_budget_usd,
+                    threshold_pct=self._alert_threshold_pct,
+                )
+                self._alerted = True
 
     def daily_spent_usd(self) -> float:
         return self._daily_spent_usd

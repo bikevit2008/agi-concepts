@@ -218,7 +218,8 @@
 | 14 | ✅ done | (prev) | 2026-05-09 | Production observability bundle (Tempo + Prometheus + Grafana) |
 | 15 | ✅ done | (prev) | 2026-05-09 | LLM-driven REM abstractions (HDBSCAN + Generative-Agents reflection + provenance + constitution gate) |
 | 16 | ✅ done | (prev) | 2026-05-09 | NATS JetStream testcontainers + Offline-RL Behavior-Cloning recovery policy + dataset builder |
-| 17 | ✅ done | (this) | 2026-05-09 | Prompt-injection v2 (spotlighting + datamarking + classifier + new constitutional policy) + Grafana alerts |
+| 17 | ✅ done | (prev) | 2026-05-09 | Prompt-injection v2 (spotlighting + datamarking + classifier + new constitutional policy) + Grafana alerts |
+| 18 | ✅ done | (this) | 2026-05-10 | Self-skill `.devin/skills/agi-mvp/` — институциональная память для будущих итераций |
 
 ## Архитектурный слой контрактов
 
