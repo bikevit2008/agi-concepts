@@ -226,6 +226,10 @@
 | 22 | ✅ done | 892e75b / f95650d | 2026-05-10 | Runtime cleanup: memory store is recall source; team model calls use `AgnoModelInvoker` |
 | 23 | ✅ done | ac4ab13 | 2026-05-10 | Checkpoint restore/snapshot preserves semantic memory state |
 | 24 | ✅ done | d10999a | 2026-05-10 | OpenRouter model cost rates refreshed from May 2026 pricing |
+| 25 | ✅ done | dfd80e2 | 2026-05-10 | MVP install profiles, `--smoke` deterministic CLI, README quickstart |
+| 26 | ✅ done | 9cc2757 | 2026-05-10 | Architecture cleanup: single fallback builder + `model_fallback_enabled` honored |
+| 27 | ✅ done | 3ced35d | 2026-05-10 | Persistence hardening: checkpoint prune off-by-one, corrupt snapshot fallback, restart sequence tests |
+| 28 | ✅ done | c9742b4 | 2026-05-10 | Research harness: deterministic dt + long-run stability runner |
 
 ## Архитектурный слой контрактов
 
