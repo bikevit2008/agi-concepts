@@ -117,6 +117,33 @@ class ConsciousnessTeam:
                 logger.warning("memory_contents_failed", error=str(e))
         return self.memories[-limit:]
 
+    def snapshot_memories(self) -> List[str]:
+        if self.flags.memory_store_enabled:
+            try:
+                return [entry.content for entry in self.memory_store.all_entries()]
+            except Exception as e:
+                logger.warning("memory_snapshot_failed", error=str(e))
+        return list(self.memories)
+
+    def restore_memories(self, memories: List[str]) -> None:
+        self.memories = list(memories)
+        if not self.flags.memory_store_enabled:
+            return
+        try:
+            if self.memory_store.count() > 0:
+                return
+            for content in memories:
+                self.memory_store.store(
+                    MemoryEntry(
+                        id="",
+                        content=content,
+                        source="checkpoint_restore",
+                        confidence=0.7,
+                    )
+                )
+        except Exception as e:
+            logger.warning("memory_restore_failed", error=str(e))
+
     def _gated_stimulate(
         self,
         agent: str,

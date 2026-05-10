@@ -201,3 +201,27 @@ def test_memory_disabled_skips_store_calls():
     # Vector store untouched (disabled), but legacy list updated
     assert store.count() == 0
     assert any("should not persist" in m for m in team.memories)
+
+
+def test_team_snapshot_memories_prefers_store():
+    embedder = HashingEmbedder()
+    store = InMemoryMemoryStore(embedder=embedder)
+    store.store(MemoryEntry(id="", content="stored semantic memory", source="test"))
+    tracker = EmbeddingProvenanceTracker(embedder=embedder)
+    team = _make_team(store, tracker)
+    team.memories.append("legacy shadow memory")
+
+    assert team.snapshot_memories() == ["stored semantic memory"]
+
+
+def test_team_restore_memories_seeds_empty_store():
+    embedder = HashingEmbedder()
+    store = InMemoryMemoryStore(embedder=embedder)
+    tracker = EmbeddingProvenanceTracker(embedder=embedder)
+    team = _make_team(store, tracker)
+
+    team.restore_memories(["restored memory"])
+
+    assert team.memories == ["restored memory"]
+    assert store.count() == 1
+    assert store.all_contents() == ["restored memory"]

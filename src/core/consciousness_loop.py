@@ -203,7 +203,10 @@ class ConsciousnessLoop:
 
             # Restore team-side state
             if snapshot.memories:
-                self.team.memories = list(snapshot.memories)
+                if hasattr(type(self.team), "restore_memories"):
+                    self.team.restore_memories(list(snapshot.memories))
+                else:
+                    self.team.memories = list(snapshot.memories)
             if snapshot.emotion_history:
                 self.team.emotion_history = list(snapshot.emotion_history)
             if snapshot.state_journal:
@@ -299,7 +302,11 @@ class ConsciousnessLoop:
             timestamp_ms=int(_time.time() * 1000),
             runtime_state=self.runtime_state.to_dict(),
             hysteresis=self.hysteresis.to_dict(),
-            memories=list(self.team.memories),
+            memories=(
+                self.team.snapshot_memories()
+                if hasattr(type(self.team), "snapshot_memories")
+                else list(self.team.memories)
+            ),
             emotion_history=list(self.team.emotion_history)[-50:],
             state_journal=list(self.team.state_journal)[-30:],
             extra={
