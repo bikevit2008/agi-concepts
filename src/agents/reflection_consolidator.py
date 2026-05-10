@@ -24,7 +24,7 @@ from agno.agent import Agent
 from agno.models.openrouter import OpenRouter
 from pydantic import BaseModel, Field, field_validator
 
-from src.agents._fallback import build_fallback_models
+from src.agents._fallback import build_fallback_config
 from src.config.settings import ModelSettings
 
 
@@ -103,7 +103,7 @@ def create_reflection_consolidator_agent(model_settings: ModelSettings) -> Agent
             id=model_settings.id,
             max_tokens=400,
         ),
-        fallback_models=build_fallback_models(model_settings),
+        fallback_config=build_fallback_config(model_settings),
         instructions=REFLECTION_INSTRUCTIONS,
         output_schema=ReflectionAbstraction,
         markdown=False,

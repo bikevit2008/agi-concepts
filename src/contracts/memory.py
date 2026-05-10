@@ -94,6 +94,10 @@ class IMemoryStore(Protocol):
         """Return all stored memory contents (for legacy fallback paths)."""
         ...
 
+    def all_entries(self) -> List[MemoryEntry]:
+        """Return all stored memory entries."""
+        ...
+
     def close(self) -> None:
         """Flush + close."""
         ...
@@ -170,6 +174,9 @@ class NullMemoryStore:
 
     def all_contents(self) -> List[str]:
         return [e.content for e in self._entries]
+
+    def all_entries(self) -> List[MemoryEntry]:
+        return list(self._entries)
 
     def close(self) -> None:
         return None

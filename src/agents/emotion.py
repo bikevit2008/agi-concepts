@@ -3,7 +3,7 @@ from __future__ import annotations
 from agno.agent import Agent
 from agno.models.openrouter import OpenRouter
 
-from src.agents._fallback import build_fallback_models
+from src.agents._fallback import build_fallback_config
 from src.agents.base import EmotionState
 from src.config.settings import ModelSettings
 
@@ -46,7 +46,7 @@ def create_emotion_agent(model_settings: ModelSettings) -> Agent:
             id=model_settings.id,
             max_tokens=512,
         ),
-        fallback_models=build_fallback_models(model_settings),
+        fallback_config=build_fallback_config(model_settings),
         instructions=EMOTION_INSTRUCTIONS,
         output_schema=EmotionState,
         session_state={

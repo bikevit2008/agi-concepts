@@ -150,9 +150,7 @@ class HebbianMemoryConsolidator:
         }
 
     def _collect_entries(self, memory_ids: List[str]) -> List[MemoryEntry]:
-        if not hasattr(self.memory_store, "all_entries"):
-            return []
-        all_entries = self.memory_store.all_entries()  # type: ignore[attr-defined]
+        all_entries = self.memory_store.all_entries()
         if memory_ids:
             wanted = set(memory_ids)
             return [e for e in all_entries if e.id in wanted]

@@ -301,14 +301,7 @@ class ConsciousnessTeam:
                             self.flags.provenance_tracking_enabled
                             and memory_data.recalled_memories
                         ):
-                            store_entries = (
-                                self.memory_store.all_entries()
-                                if hasattr(self.memory_store, "all_entries")
-                                else [
-                                    MemoryEntry(id=str(i), content=c, source="legacy")
-                                    for i, c in enumerate(self.memory_store.all_contents())
-                                ]
-                            )
+                            store_entries = self.memory_store.all_entries()
                             verified: List[str] = []
                             verdicts: Dict[str, str] = {}
                             for recalled_text in memory_data.recalled_memories:

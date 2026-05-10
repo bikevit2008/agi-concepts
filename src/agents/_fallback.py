@@ -32,4 +32,20 @@ def build_fallback_models(model_settings: ModelSettings) -> List[Any]:
     return [OpenRouter(id=mid) for mid in model_settings.fallback_models]
 
 
-__all__ = ["build_fallback_models"]
+def build_fallback_config(model_settings: ModelSettings) -> Any | None:
+    if not model_settings.fallback_models:
+        return None
+    try:
+        from agno.models.fallback import FallbackConfig
+        from agno.models.openrouter import OpenRouter
+    except ImportError:
+        return None
+    fallback_models = [OpenRouter(id=mid) for mid in model_settings.fallback_models]
+    return FallbackConfig(
+        on_error=fallback_models,
+        on_rate_limit=fallback_models,
+        on_context_overflow=fallback_models,
+    )
+
+
+__all__ = ["build_fallback_config", "build_fallback_models"]
