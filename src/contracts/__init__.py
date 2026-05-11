@@ -46,6 +46,12 @@ from src.contracts.goals import (
     NullGoalPursuitPolicy,
     NullGoalStack,
 )
+from src.contracts.learning import (
+    ILearningStore,
+    LearnedInsight,
+    NullLearningStore,
+    SessionContext,
+)
 from src.contracts.ml import (
     CollapseSignal,
     ICollapseForecaster,
@@ -130,6 +136,11 @@ __all__ = [
     "IGoalStack",
     "NullGoalPursuitPolicy",
     "NullGoalStack",
+    # Learning
+    "ILearningStore",
+    "LearnedInsight",
+    "NullLearningStore",
+    "SessionContext",
     # ML
     "CollapseSignal",
     "ICollapseForecaster",

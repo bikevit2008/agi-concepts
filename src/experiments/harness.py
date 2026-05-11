@@ -34,6 +34,7 @@ from src.contracts.governance import (
     NullGovernanceKernel,
 )
 from src.contracts.goals import NullGoalStack
+from src.contracts.learning import ILearningStore
 from src.contracts.memory import NullMemoryStore, NullProvenanceTracker
 from src.contracts.ml import (
     NullCollapseForecaster,
@@ -50,6 +51,7 @@ from src.engine.circuit_breaker import SaturationCircuitBreaker
 from src.engine.goal_pursuit import DeterministicGoalPursuitPolicy
 from src.engine.goal_stack import PersistentGoalStack
 from src.engine.homeostatic_hysteresis import HomeostaticHysteresisEngine
+from src.engine.learning_store import PersistentLearningStore
 from src.governance.kernel import DeterministicGovernanceKernel, GovernancePolicy
 
 
@@ -154,6 +156,7 @@ class HarnessResult:
     thoughts: List[Dict[str, Any]] = field(default_factory=list)
     goal_stack: Dict[str, Any] = field(default_factory=dict)
     goal_pursuit: Dict[str, Any] = field(default_factory=dict)
+    learning: Dict[str, Any] = field(default_factory=dict)
 
     def channel_trace(self, channel: str) -> List[float]:
         return self.channel_traces.get(channel, [])
@@ -262,6 +265,12 @@ class LoopHarness:
                 settings.goal_stack.pursuit_pause_low_priority_below
             ),
         )
+        learning_store: ILearningStore = PersistentLearningStore(
+            session_id=settings.learning.session_id,
+            max_recent_events=settings.learning.max_recent_events,
+            max_insights=settings.learning.max_insights,
+            min_insight_length=settings.learning.min_insight_length,
+        )
 
         return ConsciousnessLoop(
             settings=settings,
@@ -282,6 +291,7 @@ class LoopHarness:
             recovery_policy=NullRecoveryPolicy(),
             goal_stack=goal_stack,
             goal_pursuit_policy=goal_pursuit_policy,
+            learning_store=learning_store,
         )
 
     async def run(
@@ -344,6 +354,7 @@ class LoopHarness:
             thoughts=list(getattr(loop.team, "thought_results", [])),
             goal_stack=loop.goal_stack.to_dict(),
             goal_pursuit=loop.goal_pursuit_policy.to_dict(),
+            learning=loop.learning_store.to_dict(),
         )
 
 

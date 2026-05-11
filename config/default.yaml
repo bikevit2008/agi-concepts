@@ -143,3 +143,11 @@ goal_stack:
   pursuit_max_attempts_per_goal: 20
   pursuit_pause_stress_threshold: 0.92
   pursuit_pause_low_priority_below: 0.5
+
+# Stage 32 — lightweight self-learning context
+learning:
+  session_id: "default"
+  max_recent_events: 12
+  max_insights: 100
+  min_insight_length: 12
+  recall_limit: 3

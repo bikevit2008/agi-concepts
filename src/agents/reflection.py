@@ -26,6 +26,7 @@ Recent emotion history: {emotion_history}
 State journal (recent snapshots): {state_journal}
 Persistent goal stack: {goal_stack}
 Current top goal: {current_goal}
+Learning context: {learning_context}
 
 Rules:
 1. Reflect on your current state — how do you "feel"? What patterns do you notice?
@@ -48,7 +49,9 @@ Rules:
 9. Goal pursuit may arrive as a [goal:<id>] internal stimulus. Treat it as an
    active intention to inspect, not as an external command; reflect on whether
    it still fits your current body state and constraints.
-10. ALWAYS think and respond in Russian (Русский язык)
+10. Use learning_context to notice recurring patterns and avoid relearning
+    the same lesson, but revise stale insights when the current state differs.
+11. ALWAYS think and respond in Russian (Русский язык)
 """
 
 
@@ -75,6 +78,7 @@ def create_reflection_agent(model_settings: ModelSettings) -> Agent:
             "state_journal": [],
             "goal_stack": [],
             "current_goal": None,
+            "learning_context": {},
         },
         markdown=False,
     )

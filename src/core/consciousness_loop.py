@@ -26,6 +26,7 @@ from src.contracts.goals import (
     NullGoalPursuitPolicy,
     NullGoalStack,
 )
+from src.contracts.learning import ILearningStore, NullLearningStore
 from src.contracts.ml import (
     CollapseSignal,
     ICollapseForecaster,
@@ -148,6 +149,9 @@ class ConsciousnessLoop:
     goal_stack: IGoalStack = field(default_factory=NullGoalStack)
     goal_pursuit_policy: IGoalPursuitPolicy = field(default_factory=NullGoalPursuitPolicy)
 
+    # Stage 32 — lightweight self-learning context
+    learning_store: ILearningStore = field(default_factory=NullLearningStore)
+
     # Internal
     _tick_count: int = 0
     _idle_ticks: int = 0
@@ -164,6 +168,9 @@ class ConsciousnessLoop:
         self._runtime_defaults = copy.deepcopy(self.settings.runtime_state)
         # Sync checkpoint frequency from settings
         self._checkpoint_every_ticks = self.settings.persistence.checkpoint_every_ticks
+        if isinstance(self.team, ConsciousnessTeam):
+            self.team.learning_store = self.learning_store
+            self.team.learning_recall_limit = self.settings.learning.recall_limit
 
     def restore_from_checkpoint(self) -> bool:
         """Try to restore state from the latest checkpoint.
@@ -242,6 +249,10 @@ class ConsciousnessLoop:
                     logger.warning("goal_pursuit_restore_skipped_null_policy")
                 else:
                     logger.info("goal_pursuit_restored")
+            learning_payload = extra.get("learning")
+            if learning_payload:
+                self.learning_store.restore(learning_payload)
+                logger.info("learning_store_restored")
 
             self._tick_count = snapshot.tick
             logger.info(
@@ -254,6 +265,55 @@ class ConsciousnessLoop:
         except Exception as e:
             logger.error("checkpoint_apply_failed", error=str(e))
             return False
+
+    def _maybe_record_learning_interaction(
+        self,
+        stimulus: str,
+        result: Dict[str, Any],
+    ) -> None:
+        if not self.flags.self_learning_enabled:
+            return
+        try:
+            goal = self.goal_stack.top_active() if self.flags.goal_stack_enabled else None
+            context = self.learning_store.record_interaction(
+                tick=self._tick_count,
+                stimulus=stimulus,
+                result=result,
+                current_goal=goal.to_dict() if goal else None,
+            )
+            logger.info(
+                "learning_interaction_recorded",
+                interaction_count=context.interaction_count,
+                updated_tick=context.updated_tick,
+            )
+        except Exception as e:
+            logger.warning("learning_interaction_failed", error=str(e))
+
+    def _maybe_record_learning_reflection(self, reflection: Dict[str, Any]) -> None:
+        if not self.flags.self_learning_enabled:
+            return
+        try:
+            insight = self.learning_store.record_reflection(
+                tick=self._tick_count,
+                reflection=reflection,
+            )
+            if insight:
+                logger.info(
+                    "learning_insight_recorded",
+                    insight_id=insight.id,
+                    title=insight.title[:120],
+                )
+        except Exception as e:
+            logger.warning("learning_reflection_failed", error=str(e))
+
+    def _learning_context_snapshot(self, limit: int = 0) -> Dict[str, Any]:
+        if not self.flags.self_learning_enabled:
+            return {"type": "disabled", "learned_insights": []}
+        try:
+            return self.learning_store.context(limit=limit)
+        except Exception as e:
+            logger.warning("learning_context_snapshot_failed", error=str(e))
+            return {"type": "error", "learned_insights": []}
 
     def _apply_recovery(self, decision) -> None:
         """Act on a RecoveryDecision. Best-effort, non-blocking."""
@@ -379,6 +439,7 @@ class ConsciousnessLoop:
                 "circuit_breaker": self.circuit_breaker.to_dict(),
                 "goal_stack": self.goal_stack.to_dict(),
                 "goal_pursuit": self.goal_pursuit_policy.to_dict(),
+                "learning": self.learning_store.to_dict(),
             },
         )
 
@@ -556,6 +617,7 @@ class ConsciousnessLoop:
                     await cb(result)
                 except Exception as e:
                     logger.error("response_callback_error", error=str(e))
+            self._maybe_record_learning_interaction(stimulus, result)
 
         # === AUTONOMOUS THINKING (no external stimulus) ===
         # Skip entirely while asleep — no internal monologue, no spontaneous
@@ -574,6 +636,7 @@ class ConsciousnessLoop:
                 logger.info("self_reflection_triggered", idle_ticks=self._idle_ticks)
                 reflection = await asyncio.to_thread(self.team.reflect_sync)
                 if reflection:
+                    self._maybe_record_learning_reflection(reflection)
                     for cb in self._reflection_callbacks:
                         try:
                             await cb(reflection)
@@ -771,6 +834,7 @@ class ConsciousnessLoop:
                 if self.flags.goal_pursuit_enabled
                 else {"type": "disabled"}
             ),
+            "learning": self._learning_context_snapshot(limit=0),
             # Stage 12/16 — ML regulators payload + recovery_action shortcut
             # (used by ml.dataset.build_dataset_from_event_store)
             "ml": ml_payload,
@@ -867,4 +931,7 @@ class ConsciousnessLoop:
             "circuit_breaker": self.circuit_breaker.to_dict(),
             "goal_stack": self.goal_stack.to_dict(),
             "goal_pursuit": self.goal_pursuit_policy.to_dict(),
+            "learning": self._learning_context_snapshot(
+                limit=self.settings.learning.recall_limit,
+            ),
         }

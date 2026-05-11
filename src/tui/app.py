@@ -24,6 +24,7 @@ from src.contracts.goals import (
     IGoalStack,
     NullGoalStack,
 )
+from src.contracts.learning import ILearningStore
 from src.contracts.cost import ICostTracker, NullCostTracker
 from src.contracts.memory import (
     IMemoryStore,
@@ -66,6 +67,7 @@ from src.engine.circuit_breaker import SaturationCircuitBreaker
 from src.engine.goal_pursuit import DeterministicGoalPursuitPolicy
 from src.engine.goal_stack import PersistentGoalStack
 from src.engine.homeostatic_hysteresis import HomeostaticHysteresisEngine
+from src.engine.learning_store import PersistentLearningStore
 from src.engine.llm_memory_consolidator import LlmMemoryConsolidator
 from src.engine.memory_clusterer import (
     DensityFallbackClusterer,
@@ -303,6 +305,12 @@ class ConsciousnessApp(App):
                 self.settings.goal_stack.pursuit_pause_low_priority_below
             ),
         )
+        self.learning_store: ILearningStore = PersistentLearningStore(
+            session_id=self.settings.learning.session_id,
+            max_recent_events=self.settings.learning.max_recent_events,
+            max_insights=self.settings.learning.max_insights,
+            min_insight_length=self.settings.learning.min_insight_length,
+        )
 
         self.team = ConsciousnessTeam(
             model_settings=self.settings.model,
@@ -315,6 +323,8 @@ class ConsciousnessApp(App):
             provenance_tracker=self.provenance_tracker,
             cost_tracker=self.cost_tracker,
             goal_stack=self.goal_stack,
+            learning_store=self.learning_store,
+            learning_recall_limit=self.settings.learning.recall_limit,
         )
         self.consciousness_loop = ConsciousnessLoop(
             settings=self.settings,
@@ -335,6 +345,7 @@ class ConsciousnessApp(App):
             recovery_policy=self.recovery_policy,
             goal_stack=self.goal_stack,
             goal_pursuit_policy=self.goal_pursuit_policy,
+            learning_store=self.learning_store,
         )
         self._loop_task: asyncio.Task | None = None
         self._monitor_task: asyncio.Task | None = None

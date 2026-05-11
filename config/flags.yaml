@@ -37,6 +37,9 @@ ml_regulators_enabled: false
 goal_stack_enabled: true
 goal_pursuit_enabled: true
 
+# Stage 32 -- lightweight self-learning context
+self_learning_enabled: true
+
 # Stage 15 -- LLM-driven REM consolidation (off by default; opt-in)
 llm_rem_enabled: false
 

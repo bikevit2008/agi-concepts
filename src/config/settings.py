@@ -204,6 +204,17 @@ class GoalStackSettings:
 
 
 @dataclass
+class LearningSettings:
+    """Stage 32 — lightweight self-learning context."""
+
+    session_id: str = "default"
+    max_recent_events: int = 12
+    max_insights: int = 100
+    min_insight_length: int = 12
+    recall_limit: int = 3
+
+
+@dataclass
 class ToolsSettings:
     """Stage 10 — capability-gated tool registry."""
 
@@ -233,3 +244,4 @@ class Settings:
     tools: ToolsSettings = field(default_factory=ToolsSettings)
     ml_regulators: MLRegulatorsSettings = field(default_factory=MLRegulatorsSettings)
     goal_stack: GoalStackSettings = field(default_factory=GoalStackSettings)
+    learning: LearningSettings = field(default_factory=LearningSettings)

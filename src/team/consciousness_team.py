@@ -23,6 +23,7 @@ from src.contracts.governance import (
     StimulationRequest,
 )
 from src.contracts.goals import IGoalStack, NullGoalStack
+from src.contracts.learning import ILearningStore, NullLearningStore
 from src.contracts.memory import (
     IMemoryStore,
     IProvenanceTracker,
@@ -66,6 +67,10 @@ class ConsciousnessTeam:
 
     # Stage 29 — persistent intentions / goal stack
     goal_stack: IGoalStack = field(default_factory=NullGoalStack)
+
+    # Stage 32 — lightweight self-learning context
+    learning_store: ILearningStore = field(default_factory=NullLearningStore)
+    learning_recall_limit: int = 3
 
     # Internal state
     memories: List[str] = field(default_factory=list)
@@ -144,6 +149,18 @@ class ConsciousnessTeam:
         except Exception as e:
             logger.warning("goal_top_failed", error=str(e))
             return None
+
+    def _learning_context(self, query: str = "") -> Dict[str, Any]:
+        if not self.flags.self_learning_enabled:
+            return {"type": "disabled", "learned_insights": []}
+        try:
+            return self.learning_store.context(
+                query,
+                limit=getattr(self, "learning_recall_limit", 3),
+            )
+        except Exception as e:
+            logger.warning("learning_context_failed", error=str(e))
+            return {"type": "error", "learned_insights": []}
 
     def snapshot_memories(self) -> List[str]:
         if self.flags.memory_store_enabled:
@@ -298,6 +315,7 @@ class ConsciousnessTeam:
             "active_channels": active,
             "goal_stack": goal_context,
             "current_goal": top_goal,
+            "learning_context": self._learning_context(),
         }
 
     def process_stimulus_sync(self, stimulus: str) -> Dict[str, Any]:
@@ -462,6 +480,7 @@ class ConsciousnessTeam:
         if self.flags.planning_enabled:
             try:
                 active_goal = self._top_goal_dict()
+                learning_context = self._learning_context(stimulus)
                 planning_input = _build_planning_input(
                     stimulus,
                     perception_data,
@@ -476,6 +495,7 @@ class ConsciousnessTeam:
                     "active_channels": self.hysteresis.get_active_channels(),
                     "goal_stack": self._goal_context(),
                     "current_goal": active_goal,
+                    "learning_context": learning_context,
                 })
                 self._planning_agent.model.temperature = self.runtime_state.temperature
                 # max_tokens driven by vitality (energy + bandwidth)
@@ -518,6 +538,14 @@ class ConsciousnessTeam:
         recent_journal = self.state_journal[-10:] if self.state_journal else []
         goal_context = self._goal_context()
         top_goal = self._top_goal_dict()
+        learning_query = " ".join(
+            part
+            for part in [
+                top_goal.get("description", "") if top_goal else "",
+                recent_emotions[-1].get("primary_emotion", "") if recent_emotions else "",
+            ]
+            if part
+        )
 
         self._reflection_agent.session_state = {
             "temperature": rt.temperature,
@@ -531,6 +559,7 @@ class ConsciousnessTeam:
             "state_journal": recent_journal,
             "goal_stack": goal_context,
             "current_goal": top_goal,
+            "learning_context": self._learning_context(learning_query),
         }
 
         self._reflection_agent.model.temperature = min(2.0, rt.temperature + 0.2)
@@ -589,6 +618,8 @@ class ConsciousnessTeam:
         active = self.hysteresis.get_active_channels()
         recent_journal = self.state_journal[-5:] if self.state_journal else []
         recent_emotions = self.emotion_history[-3:] if self.emotion_history else []
+        top_goal = self._top_goal_dict()
+        learning_query = top_goal.get("description", "") if top_goal else "spontaneous thought"
 
         self._planning_agent.session_state.update({
             "temperature": rt.temperature,
@@ -600,7 +631,8 @@ class ConsciousnessTeam:
             "recalled_memories": self._stored_memory_contents(5),
             "active_channels": active,
             "goal_stack": self._goal_context(),
-            "current_goal": self._top_goal_dict(),
+            "current_goal": top_goal,
+            "learning_context": self._learning_context(learning_query),
         })
 
         self._planning_agent.model.temperature = min(2.0, rt.temperature + 0.3)
@@ -610,7 +642,7 @@ class ConsciousnessTeam:
         prompt = (
             "У тебя нет внешнего стимула. Подумай о чём хочешь.\n"
             f"Твоё текущее состояние: energy={rt.energy_level:.2f}, stress_channels={active}\n"
-            f"Текущая долговременная цель: {json.dumps(self._top_goal_dict(), default=str, ensure_ascii=False)}\n"
+            f"Текущая долговременная цель: {json.dumps(top_goal, default=str, ensure_ascii=False)}\n"
             f"Недавний журнал: {json.dumps(recent_journal, default=str)[:300]}\n"
             "Сгенерируй свободную мысль — о чём ты сейчас думаешь?"
         )

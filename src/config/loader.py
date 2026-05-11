@@ -18,6 +18,7 @@ from src.config.settings import (
     HysteresisSettings,
     LoggingSettings,
     LoopSettings,
+    LearningSettings,
     MemorySettings,
     MLRegulatorsSettings,
     ModelSettings,
@@ -105,6 +106,7 @@ def load_settings(config_dir: Path | None = None) -> Settings:
         MLRegulatorsSettings, data.get("ml_regulators", {})
     )
     goal_stack = _build_dataclass(GoalStackSettings, data.get("goal_stack", {}))
+    learning = _build_dataclass(LearningSettings, data.get("learning", {}))
 
     return Settings(
         model=model,
@@ -124,6 +126,7 @@ def load_settings(config_dir: Path | None = None) -> Settings:
         tools=tools,
         ml_regulators=ml_regulators,
         goal_stack=goal_stack,
+        learning=learning,
     )
 
 

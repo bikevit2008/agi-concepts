@@ -25,6 +25,7 @@ Recalled memories: {recalled_memories}
 Active hysteresis: {active_channels}
 Persistent goal stack: {goal_stack}
 Current top goal: {current_goal}
+Learning context: {learning_context}
 
 Rules:
 1. Produce a natural, coherent response integrating all inputs
@@ -42,7 +43,8 @@ Rules:
 7. If the stimulus starts with [goal:<id>], it is an active pursuit attempt for
    that persistent goal. Plan the next small step and report goal_progress.
 8. Do not invent goals. Only reason about the provided persistent goal stack.
-9. ALWAYS think and respond in Russian (Русский язык)
+9. Use learning_context as prior experience, not as unquestionable truth.
+10. ALWAYS think and respond in Russian (Русский язык)
 """
 
 
@@ -68,6 +70,7 @@ def create_planning_agent(model_settings: ModelSettings) -> Agent:
             "active_channels": {},
             "goal_stack": [],
             "current_goal": None,
+            "learning_context": {},
         },
         markdown=False,
     )
