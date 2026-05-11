@@ -43,6 +43,8 @@ class PlanningResult(BaseModel):
     confidence: float = 0.5
     next_actions: List[str] = []
     internal_state_summary: str = ""
+    goal_progress: Optional[str] = None  # advanced | blocked | completed | abandoned | none
+    goal_progress_reason: str = ""
 
 
 class ReflectionResult(BaseModel):
@@ -53,3 +55,5 @@ class ReflectionResult(BaseModel):
     hysteresis_stimuli: Dict[str, float] = {}  # can self-stimulate channels
     insight: str = ""  # any realization or pattern noticed
     internal_stimulus: Optional[str] = None  # self-generated stimulus for full pipeline processing
+    proposed_goal: Optional[str] = None  # durable intention to add to the goal stack
+    goal_priority: float = 0.5  # 0.0-1.0, only used when proposed_goal is set

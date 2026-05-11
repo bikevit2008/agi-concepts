@@ -18,6 +18,7 @@ from src.contracts.governance import (
     NullGovernanceKernel,
     StimulationRequest,
 )
+from src.contracts.goals import IGoalStack, NullGoalStack
 from src.contracts.ml import (
     CollapseSignal,
     ICollapseForecaster,
@@ -137,6 +138,9 @@ class ConsciousnessLoop:
     collapse_forecaster: ICollapseForecaster = field(default_factory=NullCollapseForecaster)
     recovery_policy: IRecoveryPolicy = field(default_factory=NullRecoveryPolicy)
 
+    # Stage 29 — persistent intentions / goal stack
+    goal_stack: IGoalStack = field(default_factory=NullGoalStack)
+
     # Internal
     _tick_count: int = 0
     _idle_ticks: int = 0
@@ -211,6 +215,18 @@ class ConsciousnessLoop:
                 self.team.emotion_history = list(snapshot.emotion_history)
             if snapshot.state_journal:
                 self.team.state_journal = list(snapshot.state_journal)
+            goal_source = None
+            goal_payload = None
+            extra = snapshot.extra or {}
+            if "goal_stack" in extra:
+                goal_source = "goal_stack"
+                goal_payload = extra.get("goal_stack")
+            elif "goals" in extra:
+                goal_source = "goals"
+                goal_payload = extra.get("goals")
+            if goal_payload:
+                self.goal_stack.restore(goal_payload)
+                logger.info("goal_stack_restored", source=goal_source)
 
             self._tick_count = snapshot.tick
             logger.info(
@@ -312,6 +328,7 @@ class ConsciousnessLoop:
             extra={
                 "governance": self.governance.to_dict(),
                 "circuit_breaker": self.circuit_breaker.to_dict(),
+                "goal_stack": self.goal_stack.to_dict(),
             },
         )
 
@@ -411,6 +428,32 @@ class ConsciousnessLoop:
 
         # Make tick number visible to the team for governance traceability
         self.team.current_tick = self._tick_count
+
+        # Stage 29 — refresh persistent goal lifecycle before agents act.
+        if self.flags.goal_stack_enabled:
+            try:
+                changed_goals = self.goal_stack.refresh(
+                    tick=self._tick_count,
+                    runtime_state=self.runtime_state.to_dict(),
+                    hysteresis_state={
+                        n: c.value for n, c in self.hysteresis.channels.items()
+                    },
+                )
+                if changed_goals:
+                    logger.info(
+                        "goal_stack_refreshed",
+                        tick=self._tick_count,
+                        changed=[
+                            {
+                                "id": goal.id,
+                                "status": goal.status.value,
+                                "failure_count": goal.failure_count,
+                            }
+                            for goal in changed_goals
+                        ],
+                    )
+            except Exception as e:
+                logger.warning("goal_stack_refresh_failed", error=str(e))
 
         # Stage 9 — advance sleep model and decide whether to suppress LLM
         sleep_decision = None
@@ -660,6 +703,11 @@ class ConsciousnessLoop:
             "had_stimulus": stimulus is not None,
             "governance": governance_stats,
             "circuit_breaker_tripped": self.circuit_breaker.tripped_channels(),
+            "goal_stack": (
+                self.goal_stack.to_dict()
+                if self.flags.goal_stack_enabled
+                else {"type": "disabled", "goals": []}
+            ),
             # Stage 12/16 — ML regulators payload + recovery_action shortcut
             # (used by ml.dataset.build_dataset_from_event_store)
             "ml": ml_payload,
@@ -754,4 +802,5 @@ class ConsciousnessLoop:
             "flags": self.flags.to_dict(),
             "governance": self.governance.to_dict(),
             "circuit_breaker": self.circuit_breaker.to_dict(),
+            "goal_stack": self.goal_stack.to_dict(),
         }

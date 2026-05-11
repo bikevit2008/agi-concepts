@@ -32,6 +32,7 @@ from src.contracts.governance import (
     NullConstitutionalAuditor,
     NullGovernanceKernel,
 )
+from src.contracts.goals import NullGoalStack
 from src.contracts.memory import NullMemoryStore, NullProvenanceTracker
 from src.contracts.ml import (
     NullCollapseForecaster,
@@ -46,6 +47,7 @@ from src.core.event_bus import EventBus
 from src.core.hysteresis import HysteresisEngine
 from src.core.runtime_state import RuntimeState
 from src.engine.circuit_breaker import SaturationCircuitBreaker
+from src.engine.goal_stack import PersistentGoalStack
 from src.engine.homeostatic_hysteresis import HomeostaticHysteresisEngine
 from src.governance.kernel import DeterministicGovernanceKernel, GovernancePolicy
 
@@ -84,6 +86,9 @@ class ScriptedTeam:
     memories: List[str] = field(default_factory=list)
     emotion_history: List[Dict[str, Any]] = field(default_factory=list)
     state_journal: List[Dict[str, Any]] = field(default_factory=list)
+    processed_results: List[Dict[str, Any]] = field(default_factory=list)
+    reflection_results: List[Dict[str, Any]] = field(default_factory=list)
+    thought_results: List[Dict[str, Any]] = field(default_factory=list)
     current_tick: int = 0
 
     # Internal counters
@@ -96,15 +101,23 @@ class ScriptedTeam:
         for channel, intensity in self.stimuli_on_stimulus.items():
             if self.hysteresis is not None:
                 self.hysteresis.stimulate(channel, intensity)
-        return self.stimulus_response(stimulus)
+        result = self.stimulus_response(stimulus)
+        self.processed_results.append(result)
+        return result
 
     def reflect_sync(self) -> Optional[Dict[str, Any]]:
         self._reflect_calls += 1
-        return self.reflection_response()
+        result = self.reflection_response()
+        if result:
+            self.reflection_results.append(result)
+        return result
 
     def spontaneous_thought_sync(self) -> Optional[Dict[str, Any]]:
         self._thought_calls += 1
-        return self.thought_response()
+        result = self.thought_response()
+        if result:
+            self.thought_results.append(result)
+        return result
 
     def record_state_snapshot(self) -> None:
         if self.runtime_state is None or self.hysteresis is None:
@@ -135,6 +148,10 @@ class HarnessResult:
     channel_traces: Dict[str, List[float]]  # per-channel value trace
     stimuli_submitted: List[str]
     errors: List[str]
+    responses: List[Dict[str, Any]] = field(default_factory=list)
+    reflections: List[Dict[str, Any]] = field(default_factory=list)
+    thoughts: List[Dict[str, Any]] = field(default_factory=list)
+    goal_stack: Dict[str, Any] = field(default_factory=dict)
 
     def channel_trace(self, channel: str) -> List[float]:
         return self.channel_traces.get(channel, [])
@@ -211,6 +228,21 @@ class LoopHarness:
             else NullGovernanceKernel()
         )
 
+        goal_stack = (
+            PersistentGoalStack(
+                max_active_goals=settings.goal_stack.max_active_goals,
+                stale_after_ticks=settings.goal_stack.stale_after_ticks,
+                block_after_failures=settings.goal_stack.block_after_failures,
+                abandon_after_failures=settings.goal_stack.abandon_after_failures,
+                pressure_stress_threshold=settings.goal_stack.pressure_stress_threshold,
+                pressure_blocks_below_priority=(
+                    settings.goal_stack.pressure_blocks_below_priority
+                ),
+            )
+            if flags.goal_stack_enabled
+            else NullGoalStack()
+        )
+
         return ConsciousnessLoop(
             settings=settings,
             flags=flags,
@@ -228,6 +260,7 @@ class LoopHarness:
             rumination_detector=NullRuminationDetector(),
             collapse_forecaster=NullCollapseForecaster(),
             recovery_policy=NullRecoveryPolicy(),
+            goal_stack=goal_stack,
         )
 
     async def run(
@@ -285,6 +318,10 @@ class LoopHarness:
             channel_traces=channel_traces,
             stimuli_submitted=stimuli_submitted,
             errors=errors,
+            responses=list(getattr(loop.team, "processed_results", [])),
+            reflections=list(getattr(loop.team, "reflection_results", [])),
+            thoughts=list(getattr(loop.team, "thought_results", [])),
+            goal_stack=loop.goal_stack.to_dict(),
         )
 
 

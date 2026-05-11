@@ -185,6 +185,18 @@ class MLRegulatorsSettings:
 
 
 @dataclass
+class GoalStackSettings:
+    """Stage 29 — persistent intentions / goal stack."""
+
+    max_active_goals: int = 5
+    stale_after_ticks: int = 50
+    block_after_failures: int = 3
+    abandon_after_failures: int = 6
+    pressure_stress_threshold: float = 0.9
+    pressure_blocks_below_priority: float = 0.4
+
+
+@dataclass
 class ToolsSettings:
     """Stage 10 — capability-gated tool registry."""
 
@@ -213,3 +225,4 @@ class Settings:
     sleep: SleepSettings = field(default_factory=SleepSettings)
     tools: ToolsSettings = field(default_factory=ToolsSettings)
     ml_regulators: MLRegulatorsSettings = field(default_factory=MLRegulatorsSettings)
+    goal_stack: GoalStackSettings = field(default_factory=GoalStackSettings)

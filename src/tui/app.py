@@ -16,6 +16,7 @@ from src.contracts.governance import (
     NullConstitutionalAuditor,
     NullGovernanceKernel,
 )
+from src.contracts.goals import IGoalStack, NullGoalStack
 from src.contracts.cost import ICostTracker, NullCostTracker
 from src.contracts.memory import (
     IMemoryStore,
@@ -56,6 +57,7 @@ from src.agents.reflection_consolidator import (
 )
 from src.engine.circadian import CircadianConfig, CircadianSleepManager
 from src.engine.circuit_breaker import SaturationCircuitBreaker
+from src.engine.goal_stack import PersistentGoalStack
 from src.engine.homeostatic_hysteresis import HomeostaticHysteresisEngine
 from src.engine.llm_memory_consolidator import LlmMemoryConsolidator
 from src.engine.memory_clusterer import (
@@ -259,6 +261,22 @@ class ConsciousnessApp(App):
             else NullRecoveryPolicy()
         )
 
+        # Stage 29 — persistent intentions / goal stack
+        self.goal_stack: IGoalStack = (
+            PersistentGoalStack(
+                max_active_goals=self.settings.goal_stack.max_active_goals,
+                stale_after_ticks=self.settings.goal_stack.stale_after_ticks,
+                block_after_failures=self.settings.goal_stack.block_after_failures,
+                abandon_after_failures=self.settings.goal_stack.abandon_after_failures,
+                pressure_stress_threshold=self.settings.goal_stack.pressure_stress_threshold,
+                pressure_blocks_below_priority=(
+                    self.settings.goal_stack.pressure_blocks_below_priority
+                ),
+            )
+            if self.flags.goal_stack_enabled
+            else NullGoalStack()
+        )
+
         self.team = ConsciousnessTeam(
             model_settings=self.settings.model,
             runtime_state=self.runtime_state,
@@ -269,6 +287,7 @@ class ConsciousnessApp(App):
             memory_store=self.memory_store,
             provenance_tracker=self.provenance_tracker,
             cost_tracker=self.cost_tracker,
+            goal_stack=self.goal_stack,
         )
         self.consciousness_loop = ConsciousnessLoop(
             settings=self.settings,
@@ -287,6 +306,7 @@ class ConsciousnessApp(App):
             rumination_detector=self.rumination_detector,
             collapse_forecaster=self.collapse_forecaster,
             recovery_policy=self.recovery_policy,
+            goal_stack=self.goal_stack,
         )
         self._loop_task: asyncio.Task | None = None
         self._monitor_task: asyncio.Task | None = None

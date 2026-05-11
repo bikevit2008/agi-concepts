@@ -33,6 +33,9 @@ constitution_enabled: true
 # Stage 12 -- ML regulators (off by default; enable for experiments)
 ml_regulators_enabled: false
 
+# Stage 29 -- persistent intentions / goal stack
+goal_stack_enabled: true
+
 # Stage 15 -- LLM-driven REM consolidation (off by default; opt-in)
 llm_rem_enabled: false
 

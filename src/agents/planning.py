@@ -23,6 +23,8 @@ Current perception: {current_perception}
 Current emotion: {current_emotion}
 Recalled memories: {recalled_memories}
 Active hysteresis: {active_channels}
+Persistent goal stack: {goal_stack}
+Current top goal: {current_goal}
 
 Rules:
 1. Produce a natural, coherent response integrating all inputs
@@ -35,7 +37,10 @@ Rules:
 3. State your intent (what the consciousness is "trying to do")
 4. Suggest next_actions if any follow-up is needed
 5. Provide internal_state_summary -- a brief introspective report
-6. ALWAYS think and respond in Russian (Русский язык)
+6. If current_goal is present, explicitly decide whether this response advanced,
+   blocked, completed, abandoned, or did not affect the goal via goal_progress.
+7. Do not invent goals. Only reason about the provided persistent goal stack.
+8. ALWAYS think and respond in Russian (Русский язык)
 """
 
 
@@ -59,6 +64,8 @@ def create_planning_agent(model_settings: ModelSettings) -> Agent:
             "current_emotion": "",
             "recalled_memories": [],
             "active_channels": {},
+            "goal_stack": [],
+            "current_goal": None,
         },
         markdown=False,
     )

@@ -47,6 +47,9 @@ class FeatureFlags:
     # Stage 12 — ML regulators (rumination + collapse + recovery)
     ml_regulators_enabled: bool = False
 
+    # Stage 29 — persistent intentions / goal stack
+    goal_stack_enabled: bool = True
+
     # Stage 4 — persistence
     persistence_enabled: bool = True
 

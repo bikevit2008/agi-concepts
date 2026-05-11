@@ -37,6 +37,7 @@ from src.contracts.governance import (
     RiskTier,
     StimulationRequest,
 )
+from src.contracts.goals import Goal, GoalStatus, IGoalStack, NullGoalStack
 from src.contracts.ml import (
     CollapseSignal,
     ICollapseForecaster,
@@ -113,6 +114,11 @@ __all__ = [
     "PolicySeverity",
     "RiskTier",
     "StimulationRequest",
+    # Goals
+    "Goal",
+    "GoalStatus",
+    "IGoalStack",
+    "NullGoalStack",
     # ML
     "CollapseSignal",
     "ICollapseForecaster",

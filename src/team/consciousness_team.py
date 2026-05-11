@@ -21,6 +21,7 @@ from src.contracts.governance import (
     NullGovernanceKernel,
     StimulationRequest,
 )
+from src.contracts.goals import IGoalStack, NullGoalStack
 from src.contracts.memory import (
     IMemoryStore,
     IProvenanceTracker,
@@ -62,6 +63,9 @@ class ConsciousnessTeam:
 
     # Stage 6 — cost tracker (Null impl when disabled)
     cost_tracker: ICostTracker = field(default_factory=NullCostTracker)
+
+    # Stage 29 — persistent intentions / goal stack
+    goal_stack: IGoalStack = field(default_factory=NullGoalStack)
 
     # Internal state
     memories: List[str] = field(default_factory=list)
@@ -121,6 +125,25 @@ class ConsciousnessTeam:
             except Exception as e:
                 logger.warning("memory_contents_failed", error=str(e))
         return self.memories[-limit:]
+
+    def _goal_context(self) -> List[Dict[str, Any]]:
+        if not self.flags.goal_stack_enabled:
+            return []
+        try:
+            return self.goal_stack.context(limit=3)
+        except Exception as e:
+            logger.warning("goal_context_failed", error=str(e))
+            return []
+
+    def _top_goal_dict(self) -> Optional[Dict[str, Any]]:
+        if not self.flags.goal_stack_enabled:
+            return None
+        try:
+            goal = self.goal_stack.top_active()
+            return goal.to_dict() if goal else None
+        except Exception as e:
+            logger.warning("goal_top_failed", error=str(e))
+            return None
 
     def snapshot_memories(self) -> List[str]:
         if self.flags.memory_store_enabled:
@@ -185,6 +208,51 @@ class ConsciousnessTeam:
             )
         return decision
 
+    def _maybe_propose_goal(self, reflection: ReflectionResult) -> None:
+        if not self.flags.goal_stack_enabled:
+            return
+        proposed = (reflection.proposed_goal or "").strip()
+        if not proposed:
+            return
+        try:
+            goal = self.goal_stack.propose(
+                description=proposed,
+                priority=float(reflection.goal_priority),
+                tick=self.current_tick,
+                source="reflection",
+            )
+            if goal:
+                logger.info(
+                    "goal_proposed",
+                    goal_id=goal.id,
+                    priority=round(goal.priority, 3),
+                    description=goal.description[:120],
+                )
+        except Exception as e:
+            logger.warning("goal_proposal_failed", error=str(e))
+
+    def _apply_goal_progress(self, planning: PlanningResult) -> None:
+        if not self.flags.goal_stack_enabled:
+            return
+        status = (planning.goal_progress or "").strip().lower()
+        if not status or status in {"none", "no", "n/a", "unchanged"}:
+            return
+        try:
+            goal = self.goal_stack.top_active()
+            if goal is None:
+                return
+            reason = planning.goal_progress_reason or planning.intent
+            if status in {"advanced", "advance", "progress", "pursued"}:
+                self.goal_stack.mark_progress(goal.id, self.current_tick, reason)
+            elif status in {"blocked", "stalled", "failed"}:
+                self.goal_stack.mark_blocked(goal.id, self.current_tick, reason)
+            elif status in {"completed", "complete", "done", "resolved"}:
+                self.goal_stack.complete(goal.id, self.current_tick, reason)
+            elif status in {"abandoned", "abandon", "dropped"}:
+                self.goal_stack.abandon(goal.id, self.current_tick, reason)
+        except Exception as e:
+            logger.warning("goal_progress_failed", error=str(e), status=status)
+
     def _update_agent_states(self) -> None:
         """Push current runtime state into agent session_states."""
         rt = self.runtime_state
@@ -217,6 +285,8 @@ class ConsciousnessTeam:
         }
 
         # Planning
+        goal_context = self._goal_context()
+        top_goal = self._top_goal_dict()
         self._planning_agent.session_state = {
             "temperature": rt.temperature,
             "context_window": rt.context_window,
@@ -226,6 +296,8 @@ class ConsciousnessTeam:
             "current_emotion": "",
             "recalled_memories": [],
             "active_channels": active,
+            "goal_stack": goal_context,
+            "current_goal": top_goal,
         }
 
     def process_stimulus_sync(self, stimulus: str) -> Dict[str, Any]:
@@ -389,12 +461,21 @@ class ConsciousnessTeam:
         # 4. Planning
         if self.flags.planning_enabled:
             try:
-                planning_input = _build_planning_input(stimulus, perception_data, emotion_data, memory_data)
+                active_goal = self._top_goal_dict()
+                planning_input = _build_planning_input(
+                    stimulus,
+                    perception_data,
+                    emotion_data,
+                    memory_data,
+                    active_goal=active_goal,
+                )
                 self._planning_agent.session_state.update({
                     "current_perception": json.dumps(perception_data.model_dump()) if perception_data else "",
                     "current_emotion": json.dumps(emotion_data.model_dump()) if emotion_data else "",
                     "recalled_memories": memory_data.recalled_memories if memory_data else [],
                     "active_channels": self.hysteresis.get_active_channels(),
+                    "goal_stack": self._goal_context(),
+                    "current_goal": active_goal,
                 })
                 self._planning_agent.model.temperature = self.runtime_state.temperature
                 # max_tokens driven by vitality (energy + bandwidth)
@@ -408,6 +489,7 @@ class ConsciousnessTeam:
                 if resp and resp.content is not None:
                     planning_data = _parse_structured(resp.content, PlanningResult)
                     if planning_data:
+                        self._apply_goal_progress(planning_data)
                         result["planning"] = planning_data.model_dump()
                         result["response"] = planning_data.response
                     else:
@@ -434,6 +516,8 @@ class ConsciousnessTeam:
         # Update reflection agent state
         recent_emotions = self.emotion_history[-5:] if self.emotion_history else []
         recent_journal = self.state_journal[-10:] if self.state_journal else []
+        goal_context = self._goal_context()
+        top_goal = self._top_goal_dict()
 
         self._reflection_agent.session_state = {
             "temperature": rt.temperature,
@@ -445,6 +529,8 @@ class ConsciousnessTeam:
             "active_channels": active,
             "emotion_history": recent_emotions,
             "state_journal": recent_journal,
+            "goal_stack": goal_context,
+            "current_goal": top_goal,
         }
 
         self._reflection_agent.model.temperature = min(2.0, rt.temperature + 0.2)
@@ -465,6 +551,7 @@ class ConsciousnessTeam:
                         mood_assessment="unknown",
                     )
                 result = reflection.model_dump()
+                self._maybe_propose_goal(reflection)
                 # Self-stimulate hysteresis channels through the governance kernel.
                 # Negative (self-soothing) stimulation is always allowed; positive
                 # stimulation is capped by `reflection_self_stim_cap`.
@@ -512,6 +599,8 @@ class ConsciousnessTeam:
             "current_emotion": json.dumps(recent_emotions) if recent_emotions else "",
             "recalled_memories": self._stored_memory_contents(5),
             "active_channels": active,
+            "goal_stack": self._goal_context(),
+            "current_goal": self._top_goal_dict(),
         })
 
         self._planning_agent.model.temperature = min(2.0, rt.temperature + 0.3)
@@ -521,6 +610,7 @@ class ConsciousnessTeam:
         prompt = (
             "У тебя нет внешнего стимула. Подумай о чём хочешь.\n"
             f"Твоё текущее состояние: energy={rt.energy_level:.2f}, stress_channels={active}\n"
+            f"Текущая долговременная цель: {json.dumps(self._top_goal_dict(), default=str, ensure_ascii=False)}\n"
             f"Недавний журнал: {json.dumps(recent_journal, default=str)[:300]}\n"
             "Сгенерируй свободную мысль — о чём ты сейчас думаешь?"
         )
@@ -696,6 +786,7 @@ def _build_planning_input(
     perception: Optional[PerceptionResult],
     emotion: Optional[EmotionState],
     memory: Optional[MemoryResult],
+    active_goal: Optional[Dict[str, Any]] = None,
 ) -> str:
     parts = [f"Original stimulus: {stimulus}"]
     if perception:
@@ -704,6 +795,14 @@ def _build_planning_input(
         parts.append(f"Emotional state: {emotion.primary_emotion} (intensity={emotion.intensity}, valence={emotion.valence})")
         if emotion.reasoning:
             parts.append(f"Emotional reasoning: {emotion.reasoning}")
+    if active_goal:
+        parts.append("Persistent goal to consider:")
+        parts.append(json.dumps(active_goal, ensure_ascii=False, default=str))
+        parts.append(
+            "Report goal_progress as advanced, blocked, completed, abandoned, or none."
+        )
+    else:
+        parts.append("Persistent goal: none active.")
     if memory:
         if memory.recalled_memories:
             parts.append(f"Recalled memories: {'; '.join(memory.recalled_memories)}")

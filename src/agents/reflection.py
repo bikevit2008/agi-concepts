@@ -24,6 +24,8 @@ Current runtime state:
 Active hysteresis channels: {active_channels}
 Recent emotion history: {emotion_history}
 State journal (recent snapshots): {state_journal}
+Persistent goal stack: {goal_stack}
+Current top goal: {current_goal}
 
 Rules:
 1. Reflect on your current state — how do you "feel"? What patterns do you notice?
@@ -40,7 +42,10 @@ Rules:
    This stimulus will be processed by the full consciousness pipeline (Perception→Emotion→Memory→Planning).
    Use this to explore ideas, process emotions, or simply continue a train of thought.
    Examples: "Почему я чувствую тревогу?", "Что я помню о последнем разговоре?", "Хочу подумать о смысле существования"
-8. ALWAYS think and respond in Russian (Русский язык)
+8. You may propose ONE durable goal when you notice a recurring intention worth
+   preserving across ticks. Put it in proposed_goal with goal_priority 0.0-1.0.
+   Do not propose a new goal every reflection; prefer maintaining the current one.
+9. ALWAYS think and respond in Russian (Русский язык)
 """
 
 
@@ -65,6 +70,8 @@ def create_reflection_agent(model_settings: ModelSettings) -> Agent:
             "active_channels": {},
             "emotion_history": [],
             "state_journal": [],
+            "goal_stack": [],
+            "current_goal": None,
         },
         markdown=False,
     )
