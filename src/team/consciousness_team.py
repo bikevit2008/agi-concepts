@@ -14,6 +14,7 @@ from src.agents.planning import create_planning_agent
 from src.agents.reflection import create_reflection_agent
 from src.config.flags import FeatureFlags
 from src.config.settings import ModelSettings
+from src.contracts.bus import IEventBus
 from src.contracts.cost import ICostTracker, NullCostTracker
 from src.contracts.governance import (
     GovernanceDecision,
@@ -30,7 +31,6 @@ from src.contracts.memory import (
     NullProvenanceTracker,
     ProvenanceVerdict,
 )
-from src.core.event_bus import EventBus
 from src.core.hysteresis import HysteresisEngine
 from src.core.runtime_state import RuntimeState
 from src.engine.homeostatic_hysteresis import HomeostaticHysteresisEngine
@@ -52,7 +52,7 @@ class ConsciousnessTeam:
     runtime_state: RuntimeState
     hysteresis: HysteresisEngine | HomeostaticHysteresisEngine
     flags: FeatureFlags
-    event_bus: EventBus
+    event_bus: IEventBus
 
     # Stage 3 — governance kernel (Null impl when disabled, allows everything)
     governance: IGovernanceKernel = field(default_factory=NullGovernanceKernel)

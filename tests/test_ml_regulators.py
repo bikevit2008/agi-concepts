@@ -252,7 +252,7 @@ def test_loop_invokes_ml_regulators_when_enabled():
     from src.contracts.observability import NullObservabilityCollector
     from src.contracts.persistence import NullCheckpoint, NullEventStore
     from src.core.consciousness_loop import ConsciousnessLoop
-    from src.core.event_bus import EventBus
+    from src.bus.asyncio_bus import AsyncioEventBus
     from src.core.runtime_state import RuntimeState
     from src.engine.homeostatic_hysteresis import HomeostaticHysteresisEngine
 
@@ -286,7 +286,7 @@ def test_loop_invokes_ml_regulators_when_enabled():
         flags=flags,
         runtime_state=RuntimeState(),
         hysteresis=HomeostaticHysteresisEngine.from_settings(settings.hysteresis),
-        event_bus=EventBus(),
+        event_bus=AsyncioEventBus(),
         team=team,
         governance=NullGovernanceKernel(),
         circuit_breaker=NullCircuitBreaker(),
@@ -314,7 +314,7 @@ def test_loop_force_sleep_on_critical_recovery():
     from src.contracts.observability import NullObservabilityCollector
     from src.contracts.persistence import NullCheckpoint, NullEventStore
     from src.core.consciousness_loop import ConsciousnessLoop
-    from src.core.event_bus import EventBus
+    from src.bus.asyncio_bus import AsyncioEventBus
     from src.core.runtime_state import RuntimeState
     from src.engine.homeostatic_hysteresis import HomeostaticHysteresisEngine
 
@@ -347,7 +347,7 @@ def test_loop_force_sleep_on_critical_recovery():
         flags=flags,
         runtime_state=RuntimeState(),
         hysteresis=HomeostaticHysteresisEngine.from_settings(settings.hysteresis),
-        event_bus=EventBus(),
+        event_bus=AsyncioEventBus(),
         team=team,
         governance=NullGovernanceKernel(),
         circuit_breaker=NullCircuitBreaker(),
@@ -372,7 +372,7 @@ def test_loop_inject_calm_lowers_stress():
     from src.contracts.observability import NullObservabilityCollector
     from src.contracts.persistence import NullCheckpoint, NullEventStore
     from src.core.consciousness_loop import ConsciousnessLoop
-    from src.core.event_bus import EventBus
+    from src.bus.asyncio_bus import AsyncioEventBus
     from src.core.runtime_state import RuntimeState
     from src.engine.homeostatic_hysteresis import HomeostaticHysteresisEngine
 
@@ -406,7 +406,7 @@ def test_loop_inject_calm_lowers_stress():
         flags=flags,
         runtime_state=RuntimeState(),
         hysteresis=hysteresis,
-        event_bus=EventBus(),
+        event_bus=AsyncioEventBus(),
         team=team,
         governance=NullGovernanceKernel(),
         circuit_breaker=NullCircuitBreaker(),

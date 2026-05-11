@@ -17,7 +17,7 @@ from src.contracts.observability import NullObservabilityCollector
 from src.contracts.persistence import NullEventStore
 from src.contracts.sleep import NullMemoryConsolidator, NullSleepManager
 from src.core.consciousness_loop import ConsciousnessLoop
-from src.core.event_bus import EventBus
+from src.bus.asyncio_bus import AsyncioEventBus
 from src.core.runtime_state import RuntimeState
 from src.engine.circuit_breaker import SaturationCircuitBreaker
 from src.engine.goal_stack import PersistentGoalStack
@@ -200,7 +200,7 @@ def _build_loop_with_goal_checkpoint(tmp_path: Path, stack: PersistentGoalStack)
         flags=flags,
         runtime_state=runtime_state,
         hysteresis=hysteresis,
-        event_bus=EventBus(),
+        event_bus=AsyncioEventBus(),
         team=team,
         governance=governance,
         circuit_breaker=circuit_breaker,

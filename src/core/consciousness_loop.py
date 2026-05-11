@@ -10,6 +10,8 @@ import structlog
 
 from src.config.flags import FeatureFlags
 from src.config.settings import RuntimeDefaults, Settings
+from src.bus.event_types import EventTypes
+from src.contracts.bus import IEventBus
 from src.contracts.governance import (
     GovernanceDecision,
     ICircuitBreaker,
@@ -55,7 +57,6 @@ from src.contracts.sleep import (
     SleepPhase,
     WakeState,
 )
-from src.core.event_bus import EventBus, EventType
 from src.core.hysteresis import HysteresisEngine
 from src.core.runtime_state import RuntimeState
 from src.engine.homeostatic_hysteresis import HomeostaticHysteresisEngine
@@ -120,7 +121,7 @@ class ConsciousnessLoop:
     flags: FeatureFlags
     runtime_state: RuntimeState
     hysteresis: HysteresisEngine | HomeostaticHysteresisEngine
-    event_bus: EventBus
+    event_bus: IEventBus
     team: ConsciousnessTeam
 
     # Stage 3 — governance & circuit breaker (Null implementations by default)
@@ -776,10 +777,10 @@ class ConsciousnessLoop:
             "recovery_action": ml_payload.get("recovery_action"),
         }
 
-        await self.event_bus.emit(EventType.STATE_SNAPSHOT, snapshot, source="loop")
+        await self.event_bus.emit(EventTypes.STATE_SNAPSHOT, snapshot, source="loop")
 
         if state_diff:
-            await self.event_bus.emit(EventType.RUNTIME_CHANGE, {"diff": state_diff}, source="loop")
+            await self.event_bus.emit(EventTypes.RUNTIME_CHANGE, {"diff": state_diff}, source="loop")
 
         # Stage 4 — persist event log + periodic checkpoint
         if self.flags.persistence_enabled:

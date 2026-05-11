@@ -135,7 +135,7 @@ def test_loop_uses_observability_for_tick_span():
     from src.contracts.governance import NullCircuitBreaker, NullGovernanceKernel
     from src.contracts.persistence import NullCheckpoint, NullEventStore
     from src.core.consciousness_loop import ConsciousnessLoop
-    from src.core.event_bus import EventBus
+    from src.bus.asyncio_bus import AsyncioEventBus
     from src.core.runtime_state import RuntimeState
     from src.engine.homeostatic_hysteresis import HomeostaticHysteresisEngine
 
@@ -165,7 +165,7 @@ def test_loop_uses_observability_for_tick_span():
         flags=flags,
         runtime_state=runtime_state,
         hysteresis=hysteresis,
-        event_bus=EventBus(),
+        event_bus=AsyncioEventBus(),
         team=team,
         governance=NullGovernanceKernel(),
         circuit_breaker=NullCircuitBreaker(),

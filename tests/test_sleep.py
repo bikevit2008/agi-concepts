@@ -208,7 +208,7 @@ def test_loop_suppresses_llm_during_sleep():
     from src.contracts.observability import NullObservabilityCollector
     from src.contracts.persistence import NullCheckpoint, NullEventStore
     from src.core.consciousness_loop import ConsciousnessLoop
-    from src.core.event_bus import EventBus
+    from src.bus.asyncio_bus import AsyncioEventBus
     from src.core.runtime_state import RuntimeState
     from src.engine.homeostatic_hysteresis import HomeostaticHysteresisEngine
 
@@ -240,7 +240,7 @@ def test_loop_suppresses_llm_during_sleep():
         flags=flags,
         runtime_state=RuntimeState(),
         hysteresis=HomeostaticHysteresisEngine.from_settings(settings.hysteresis),
-        event_bus=EventBus(),
+        event_bus=AsyncioEventBus(),
         team=team,
         governance=NullGovernanceKernel(),
         circuit_breaker=NullCircuitBreaker(),

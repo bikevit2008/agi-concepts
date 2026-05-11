@@ -16,7 +16,7 @@ from src.contracts.observability import NullObservabilityCollector
 from src.contracts.persistence import NullCheckpoint, NullEventStore
 from src.contracts.sleep import NullMemoryConsolidator, NullSleepManager
 from src.core.consciousness_loop import ConsciousnessLoop
-from src.core.event_bus import EventBus
+from src.bus.asyncio_bus import AsyncioEventBus
 from src.core.runtime_state import RuntimeState
 from src.engine.circuit_breaker import SaturationCircuitBreaker
 from src.engine.goal_pursuit import DeterministicGoalPursuitPolicy
@@ -162,7 +162,7 @@ def _build_goal_pursuit_loop(
         flags=flags,
         runtime_state=runtime_state,
         hysteresis=hysteresis,
-        event_bus=EventBus(),
+        event_bus=AsyncioEventBus(),
         team=team,
         governance=DeterministicGovernanceKernel(
             policy=GovernancePolicy(),

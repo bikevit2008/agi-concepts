@@ -26,6 +26,7 @@ from typing import Any, Callable, Dict, List, Optional
 from src.config.flags import FeatureFlags
 from src.config.loader import load_flags, load_settings
 from src.config.settings import Settings
+from src.bus.asyncio_bus import AsyncioEventBus
 from src.contracts.governance import (
     IConstitutionalAuditor,
     NullCircuitBreaker,
@@ -43,7 +44,6 @@ from src.contracts.observability import NullObservabilityCollector
 from src.contracts.persistence import NullCheckpoint, NullEventStore
 from src.contracts.sleep import NullMemoryConsolidator, NullSleepManager
 from src.core.consciousness_loop import ConsciousnessLoop
-from src.core.event_bus import EventBus
 from src.core.hysteresis import HysteresisEngine
 from src.core.runtime_state import RuntimeState
 from src.engine.circuit_breaker import SaturationCircuitBreaker
@@ -268,7 +268,7 @@ class LoopHarness:
             flags=flags,
             runtime_state=runtime_state,
             hysteresis=hysteresis,
-            event_bus=EventBus(),
+            event_bus=AsyncioEventBus(schema_validation=settings.bus.schema_validation),
             team=team,
             governance=governance,
             circuit_breaker=circuit_breaker,

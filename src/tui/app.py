@@ -5,9 +5,12 @@ from typing import Any, Dict
 
 from textual.app import App
 
+from src.bus.asyncio_bus import AsyncioEventBus
+from src.bus.event_types import EventTypes
 from src.config.flags import FeatureFlags
 from src.config.loader import load_flags, load_settings
 from src.config.settings import Settings
+from src.contracts.bus import EventEnvelope, IEventBus
 from src.contracts.governance import (
     IConstitutionalAuditor,
     ICircuitBreaker,
@@ -53,7 +56,6 @@ from src.contracts.sleep import (
     NullSleepManager,
 )
 from src.core.consciousness_loop import ConsciousnessLoop
-from src.core.event_bus import EventBus, EventType
 from src.core.hysteresis import HysteresisEngine
 from src.core.runtime_state import RuntimeState
 from src.agents.reflection_consolidator import (
@@ -117,7 +119,9 @@ class ConsciousnessApp(App):
         super().__init__()
         self.settings: Settings = load_settings()
         self.flags: FeatureFlags = load_flags()
-        self.event_bus = EventBus()
+        self.event_bus: IEventBus = AsyncioEventBus(
+            schema_validation=self.settings.bus.schema_validation,
+        )
         self.runtime_state = RuntimeState.from_dict(
             {
                 "temperature": self.settings.runtime_state.temperature,
@@ -505,7 +509,7 @@ class ConsciousnessApp(App):
         self.consciousness_loop.on_reflection(self._on_reflection)
 
         # Subscribe to state snapshots for TUI updates
-        self.event_bus.subscribe(EventType.STATE_SNAPSHOT, self._on_state_snapshot)
+        self.event_bus.subscribe(EventTypes.STATE_SNAPSHOT, self._on_state_snapshot)
 
         # Push main screen
         await self.push_screen(MainScreen())
@@ -578,7 +582,7 @@ class ConsciousnessApp(App):
         """Update TUI panels + Rerun viewer from state snapshot."""
         try:
             screen = self.screen
-            data = event.data
+            data = event.payload
             tick = data.get("tick", 0)
             rt = data.get("runtime_state", {})
             hyst = data.get("hysteresis", {})
@@ -643,7 +647,10 @@ class ConsciousnessApp(App):
         self.push_screen(FlagsScreen(self.flags))
 
     def action_toggle_monitor(self) -> None:
-        events = self.event_bus.get_history(limit=30)
+        events = [
+            _event_to_monitor_dict(event)
+            for event in self.event_bus.history(limit=30)
+        ]
         snapshot = self.consciousness_loop.get_state_snapshot()
         self.push_screen(MonitorScreen(events, snapshot))
 
@@ -653,6 +660,15 @@ class ConsciousnessApp(App):
             self._loop_task.cancel()
         if self._monitor_task:
             self._monitor_task.cancel()
+
+
+def _event_to_monitor_dict(event: EventEnvelope) -> Dict[str, Any]:
+    return {
+        "timestamp": str(event.timestamp_ms),
+        "type": event.event_type,
+        "source": event.source,
+        "data": event.payload,
+    }
 
 
 def _summarize_agent_result(agent_name: str, data: dict) -> str:

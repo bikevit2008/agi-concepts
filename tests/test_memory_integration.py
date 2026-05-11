@@ -15,7 +15,7 @@ from src.config.flags import FeatureFlags
 from src.config.settings import ModelSettings
 from src.contracts.governance import NullGovernanceKernel
 from src.contracts.memory import MemoryEntry, ProvenanceVerdict
-from src.core.event_bus import EventBus
+from src.bus.asyncio_bus import AsyncioEventBus
 from src.core.runtime_state import RuntimeState
 from src.engine.homeostatic_hysteresis import HomeostaticHysteresisEngine
 from src.persistence.embedder import HashingEmbedder
@@ -50,7 +50,7 @@ def _make_team(memory_store, provenance_tracker, flags=None):
             runtime_state=runtime_state,
             hysteresis=hysteresis,
             flags=flags,
-            event_bus=EventBus(),
+            event_bus=AsyncioEventBus(),
             governance=NullGovernanceKernel(),
             memory_store=memory_store,
             provenance_tracker=provenance_tracker,

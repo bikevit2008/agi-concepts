@@ -16,7 +16,7 @@ from src.config.flags import FeatureFlags
 from src.config.settings import Settings
 from src.contracts.governance import GovernanceDecision, NullGovernanceKernel
 from src.core.consciousness_loop import ConsciousnessLoop, gated_stimulate
-from src.core.event_bus import EventBus
+from src.bus.asyncio_bus import AsyncioEventBus
 from src.core.runtime_state import RuntimeState
 from src.engine.circuit_breaker import SaturationCircuitBreaker
 from src.engine.homeostatic_hysteresis import HomeostaticHysteresisEngine
@@ -29,7 +29,7 @@ def _make_loop(governance, circuit_breaker, flags=None) -> ConsciousnessLoop:
     flags = flags or FeatureFlags()
     runtime_state = RuntimeState()
     hysteresis = HomeostaticHysteresisEngine.from_settings(settings.hysteresis)
-    event_bus = EventBus()
+    event_bus = AsyncioEventBus()
 
     # Stub the team to skip LLM agents
     team = MagicMock()

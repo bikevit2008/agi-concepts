@@ -17,6 +17,7 @@ import pytest
 
 from src.config.flags import FeatureFlags
 from src.config.settings import Settings
+from src.bus.event_types import EventTypes
 from src.contracts.governance import (
     IConstitutionalAuditor,
     NullConstitutionalAuditor,
@@ -30,7 +31,7 @@ from src.contracts.ml import (
 from src.contracts.observability import NullObservabilityCollector
 from src.contracts.sleep import NullMemoryConsolidator, NullSleepManager
 from src.core.consciousness_loop import ConsciousnessLoop
-from src.core.event_bus import EventBus
+from src.bus.asyncio_bus import AsyncioEventBus
 from src.core.runtime_state import RuntimeState
 from src.engine.circuit_breaker import SaturationCircuitBreaker
 from src.engine.homeostatic_hysteresis import HomeostaticHysteresisEngine
@@ -72,7 +73,7 @@ def _build_loop_with_persistence(tmp_path: Path, **extras):
         flags=flags,
         runtime_state=runtime_state,
         hysteresis=hysteresis,
-        event_bus=EventBus(),
+        event_bus=AsyncioEventBus(),
         team=team,
         governance=governance,
         circuit_breaker=circuit_breaker,
@@ -103,6 +104,9 @@ def test_e2e_stimulus_flows_to_event_store(tmp_path: Path):
         stim_events = list(es.replay(event_type="stimulus"))
         assert len(stim_events) == 1
         assert stim_events[0].payload["stimulus"] == "hello"
+        snapshots = loop.event_bus.history(EventTypes.STATE_SNAPSHOT)
+        assert snapshots
+        assert snapshots[-1].payload["tick"] == loop.tick_count
     finally:
         es.close()
         cp.close()

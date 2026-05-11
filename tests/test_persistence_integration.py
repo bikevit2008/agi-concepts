@@ -22,7 +22,7 @@ from src.config.settings import Settings
 from src.contracts.governance import NullCircuitBreaker, NullGovernanceKernel
 from src.contracts.persistence import NullCheckpoint, NullEventStore, Snapshot
 from src.core.consciousness_loop import ConsciousnessLoop
-from src.core.event_bus import EventBus
+from src.bus.asyncio_bus import AsyncioEventBus
 from src.core.runtime_state import RuntimeState
 from src.engine.homeostatic_hysteresis import HomeostaticHysteresisEngine
 from src.persistence.sqlite_checkpoint import SqliteCheckpoint
@@ -38,7 +38,7 @@ def _make_loop(tmp_path: Path, **overrides) -> ConsciousnessLoop:
     flags = overrides.get("flags") or FeatureFlags()
     runtime_state = RuntimeState()
     hysteresis = HomeostaticHysteresisEngine.from_settings(settings.hysteresis)
-    event_bus = EventBus()
+    event_bus = AsyncioEventBus()
 
     team = MagicMock()
     team.process_stimulus_sync.return_value = {"response": "ok"}

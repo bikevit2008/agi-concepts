@@ -1,9 +1,8 @@
 """AsyncioEventBus — `IEventBus` implementation backed by asyncio queues.
 
 This is the in-process default. It satisfies the contract using only
-the standard library, with optional JSON Schema validation. The existing
-`src.core.event_bus.EventBus` predates the contract; this class wraps
-the same logic but in a contract-conforming dataclass.
+the standard library, with optional JSON Schema validation and bounded
+history for TUI/harness diagnostics.
 """
 
 from __future__ import annotations

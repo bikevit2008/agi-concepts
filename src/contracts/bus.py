@@ -1,8 +1,7 @@
 """Bus contracts — typed publish/subscribe message bus.
 
 Two implementations:
-1. AsyncioEventBus (existing src.core.event_bus.EventBus) — in-process,
-   async, bounded history. Used by default.
+1. AsyncioEventBus — in-process, async, bounded history. Used by default.
 2. NatsEventBus (Stage 8) — distributed, durable, replayable. Used in
    production deployments.
 

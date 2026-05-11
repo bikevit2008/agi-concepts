@@ -9,7 +9,7 @@ from src.agents.reflection import create_reflection_agent
 from src.agents.reflection_consolidator import create_reflection_consolidator_agent
 from src.config.flags import FeatureFlags
 from src.config.settings import HysteresisSettings, ModelSettings
-from src.core.event_bus import EventBus
+from src.bus.asyncio_bus import AsyncioEventBus
 from src.core.runtime_state import RuntimeState
 from src.engine.homeostatic_hysteresis import HomeostaticHysteresisEngine
 from src.team.consciousness_team import ConsciousnessTeam
@@ -77,7 +77,7 @@ def test_team_respects_model_fallback_disabled_flag():
             runtime_state=RuntimeState(),
             hysteresis=hysteresis,
             flags=flags,
-            event_bus=EventBus(),
+            event_bus=AsyncioEventBus(),
         )
         for create in (p, e, m, pl, r):
             assert create.call_args.args[0].fallback_models == []
