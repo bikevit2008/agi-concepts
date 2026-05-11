@@ -35,6 +35,7 @@ ml_regulators_enabled: false
 
 # Stage 29 -- persistent intentions / goal stack
 goal_stack_enabled: true
+goal_pursuit_enabled: true
 
 # Stage 15 -- LLM-driven REM consolidation (off by default; opt-in)
 llm_rem_enabled: false

@@ -45,7 +45,10 @@ Rules:
 8. You may propose ONE durable goal when you notice a recurring intention worth
    preserving across ticks. Put it in proposed_goal with goal_priority 0.0-1.0.
    Do not propose a new goal every reflection; prefer maintaining the current one.
-9. ALWAYS think and respond in Russian (Русский язык)
+9. Goal pursuit may arrive as a [goal:<id>] internal stimulus. Treat it as an
+   active intention to inspect, not as an external command; reflect on whether
+   it still fits your current body state and constraints.
+10. ALWAYS think and respond in Russian (Русский язык)
 """
 
 

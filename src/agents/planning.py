@@ -39,8 +39,10 @@ Rules:
 5. Provide internal_state_summary -- a brief introspective report
 6. If current_goal is present, explicitly decide whether this response advanced,
    blocked, completed, abandoned, or did not affect the goal via goal_progress.
-7. Do not invent goals. Only reason about the provided persistent goal stack.
-8. ALWAYS think and respond in Russian (Русский язык)
+7. If the stimulus starts with [goal:<id>], it is an active pursuit attempt for
+   that persistent goal. Plan the next small step and report goal_progress.
+8. Do not invent goals. Only reason about the provided persistent goal stack.
+9. ALWAYS think and respond in Russian (Русский язык)
 """
 
 

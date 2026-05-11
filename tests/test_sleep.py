@@ -250,10 +250,30 @@ def test_loop_suppresses_llm_during_sleep():
         sleep_manager=sleep_manager,
     )
 
+    class CountingQueue(asyncio.Queue[str]):
+        def __init__(self) -> None:
+            super().__init__()
+            self.get_nowait_calls = 0
+            self.put_calls = 0
+
+        def get_nowait(self) -> str:
+            self.get_nowait_calls += 1
+            return super().get_nowait()
+
+        async def put(self, item: str) -> None:
+            self.put_calls += 1
+            await super().put(item)
+
+    queue = CountingQueue()
+    loop._stimulus_queue = queue
+
     asyncio.run(loop.submit_stimulus("hello"))
+    asyncio.run(loop._tick())
     asyncio.run(loop._tick())
 
     # team.process_stimulus_sync must not have been called
     team.process_stimulus_sync.assert_not_called()
-    # Stimulus should be re-queued for after wake
+    # Stimulus should stay queued for wake without dequeue/requeue churn
     assert loop._stimulus_queue.qsize() == 1
+    assert queue.get_nowait_calls == 0
+    assert queue.put_calls == 1

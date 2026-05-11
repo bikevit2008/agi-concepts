@@ -128,3 +128,18 @@ tools:
   web_search_enabled: false
   code_executor_enabled: false
   code_executor_backend: "subprocess"
+
+# Stage 29/30 — persistent goals + active pursuit
+goal_stack:
+  max_active_goals: 5
+  stale_after_ticks: 50
+  block_after_failures: 3
+  abandon_after_failures: 6
+  pressure_stress_threshold: 0.9
+  pressure_blocks_below_priority: 0.4
+  pursuit_min_idle_ticks: 2
+  pursuit_min_ticks_between_attempts: 6
+  pursuit_progress_stale_after_ticks: 8
+  pursuit_max_attempts_per_goal: 20
+  pursuit_pause_stress_threshold: 0.92
+  pursuit_pause_low_priority_below: 0.5

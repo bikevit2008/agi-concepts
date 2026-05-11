@@ -47,6 +47,7 @@ from src.core.event_bus import EventBus
 from src.core.hysteresis import HysteresisEngine
 from src.core.runtime_state import RuntimeState
 from src.engine.circuit_breaker import SaturationCircuitBreaker
+from src.engine.goal_pursuit import DeterministicGoalPursuitPolicy
 from src.engine.goal_stack import PersistentGoalStack
 from src.engine.homeostatic_hysteresis import HomeostaticHysteresisEngine
 from src.governance.kernel import DeterministicGovernanceKernel, GovernancePolicy
@@ -152,6 +153,7 @@ class HarnessResult:
     reflections: List[Dict[str, Any]] = field(default_factory=list)
     thoughts: List[Dict[str, Any]] = field(default_factory=list)
     goal_stack: Dict[str, Any] = field(default_factory=dict)
+    goal_pursuit: Dict[str, Any] = field(default_factory=dict)
 
     def channel_trace(self, channel: str) -> List[float]:
         return self.channel_traces.get(channel, [])
@@ -242,6 +244,24 @@ class LoopHarness:
             if flags.goal_stack_enabled
             else NullGoalStack()
         )
+        goal_pursuit_policy = DeterministicGoalPursuitPolicy(
+            min_idle_ticks=settings.goal_stack.pursuit_min_idle_ticks,
+            min_ticks_between_attempts=(
+                settings.goal_stack.pursuit_min_ticks_between_attempts
+            ),
+            progress_stale_after_ticks=(
+                settings.goal_stack.pursuit_progress_stale_after_ticks
+            ),
+            max_attempts_per_goal=(
+                settings.goal_stack.pursuit_max_attempts_per_goal
+            ),
+            pause_stress_threshold=(
+                settings.goal_stack.pursuit_pause_stress_threshold
+            ),
+            pause_low_priority_below=(
+                settings.goal_stack.pursuit_pause_low_priority_below
+            ),
+        )
 
         return ConsciousnessLoop(
             settings=settings,
@@ -261,6 +281,7 @@ class LoopHarness:
             collapse_forecaster=NullCollapseForecaster(),
             recovery_policy=NullRecoveryPolicy(),
             goal_stack=goal_stack,
+            goal_pursuit_policy=goal_pursuit_policy,
         )
 
     async def run(
@@ -322,6 +343,7 @@ class LoopHarness:
             reflections=list(getattr(loop.team, "reflection_results", [])),
             thoughts=list(getattr(loop.team, "thought_results", [])),
             goal_stack=loop.goal_stack.to_dict(),
+            goal_pursuit=loop.goal_pursuit_policy.to_dict(),
         )
 
 

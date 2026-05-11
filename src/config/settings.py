@@ -194,6 +194,13 @@ class GoalStackSettings:
     abandon_after_failures: int = 6
     pressure_stress_threshold: float = 0.9
     pressure_blocks_below_priority: float = 0.4
+    # Stage 30 — active goal pursuit
+    pursuit_min_idle_ticks: int = 2
+    pursuit_min_ticks_between_attempts: int = 6
+    pursuit_progress_stale_after_ticks: int = 8
+    pursuit_max_attempts_per_goal: int = 20
+    pursuit_pause_stress_threshold: float = 0.92
+    pursuit_pause_low_priority_below: float = 0.5
 
 
 @dataclass

@@ -18,7 +18,12 @@ from src.contracts.governance import (
     NullGovernanceKernel,
     StimulationRequest,
 )
-from src.contracts.goals import IGoalStack, NullGoalStack
+from src.contracts.goals import (
+    IGoalPursuitPolicy,
+    IGoalStack,
+    NullGoalPursuitPolicy,
+    NullGoalStack,
+)
 from src.contracts.ml import (
     CollapseSignal,
     ICollapseForecaster,
@@ -140,6 +145,7 @@ class ConsciousnessLoop:
 
     # Stage 29 — persistent intentions / goal stack
     goal_stack: IGoalStack = field(default_factory=NullGoalStack)
+    goal_pursuit_policy: IGoalPursuitPolicy = field(default_factory=NullGoalPursuitPolicy)
 
     # Internal
     _tick_count: int = 0
@@ -227,6 +233,14 @@ class ConsciousnessLoop:
             if goal_payload:
                 self.goal_stack.restore(goal_payload)
                 logger.info("goal_stack_restored", source=goal_source)
+            goal_pursuit_payload = extra.get("goal_pursuit")
+            if goal_pursuit_payload:
+                policy_type = self.goal_pursuit_policy.to_dict().get("type")
+                self.goal_pursuit_policy.restore(goal_pursuit_payload)
+                if policy_type == "null":
+                    logger.warning("goal_pursuit_restore_skipped_null_policy")
+                else:
+                    logger.info("goal_pursuit_restored")
 
             self._tick_count = snapshot.tick
             logger.info(
@@ -285,6 +299,40 @@ class ConsciousnessLoop:
             )
             return
 
+    async def _maybe_enqueue_goal_pursuit(self) -> bool:
+        """Turn a stale active goal into a bounded internal stimulus."""
+        if not (
+            self.flags.goal_stack_enabled
+            and self.flags.goal_pursuit_enabled
+            and self.flags.internal_stimulus_enabled
+        ):
+            return False
+        try:
+            goal = self.goal_stack.top_active()
+            decision = self.goal_pursuit_policy.maybe_pursue(
+                tick=self._tick_count,
+                idle_ticks=self._idle_ticks,
+                goal=goal,
+                runtime_state=self.runtime_state.to_dict(),
+                hysteresis_state={
+                    n: c.value for n, c in self.hysteresis.channels.items()
+                },
+            )
+            if decision is None:
+                return False
+            await self._stimulus_queue.put(decision.stimulus)
+            self.goal_pursuit_policy.record(decision)
+            logger.info(
+                "goal_pursuit_enqueued",
+                goal_id=decision.goal_id,
+                reason=decision.reason,
+                stimulus=decision.stimulus[:120],
+            )
+            return True
+        except Exception as e:
+            logger.warning("goal_pursuit_failed", error=str(e))
+            return False
+
     def _maybe_consolidate(self, decision) -> None:
         """Run memory consolidation when entering NREM/REM phases.
 
@@ -329,6 +377,7 @@ class ConsciousnessLoop:
                 "governance": self.governance.to_dict(),
                 "circuit_breaker": self.circuit_breaker.to_dict(),
                 "goal_stack": self.goal_stack.to_dict(),
+                "goal_pursuit": self.goal_pursuit_policy.to_dict(),
             },
         )
 
@@ -468,50 +517,57 @@ class ConsciousnessLoop:
             )
             self._maybe_consolidate(sleep_decision)
 
-        # Check for stimulus
+        suppress_llm = bool(sleep_decision and sleep_decision.suppress_llm_calls)
+
+        # Check for stimulus. During sleep suppression, leave the queue intact
+        # so pending external/internal stimuli wait for wake without churn.
         stimulus: Optional[str] = None
-        try:
-            stimulus = self._stimulus_queue.get_nowait()
-        except asyncio.QueueEmpty:
-            self._idle_ticks += 1
+        if suppress_llm:
+            if self._stimulus_queue.qsize() > 0:
+                logger.info(
+                    "tick_stimulus_deferred_during_sleep",
+                    tick=self._tick_count,
+                    queue_size=self._stimulus_queue.qsize(),
+                )
+            else:
+                self._idle_ticks += 1
+        else:
+            try:
+                stimulus = self._stimulus_queue.get_nowait()
+            except asyncio.QueueEmpty:
+                self._idle_ticks += 1
 
         # Save pre-tick state for diff
         pre_state = copy.deepcopy(self.runtime_state)
 
         # Process stimulus if present
         result: Optional[Dict[str, Any]] = None
-        suppress_llm = bool(sleep_decision and sleep_decision.suppress_llm_calls)
         if stimulus:
             self._idle_ticks = 0
-            if suppress_llm:
-                # Asleep — defer the stimulus by re-queuing for after wake.
-                logger.info(
-                    "tick_stimulus_deferred_during_sleep",
-                    tick=self._tick_count,
-                    stimulus=stimulus[:100],
-                )
-                await self._stimulus_queue.put(stimulus)
-            else:
-                logger.info(
-                    "tick_processing", tick=self._tick_count, stimulus=stimulus[:100]
-                )
-                # Run blocking agent calls in a thread to not block the Textual event loop
-                result = await asyncio.to_thread(self.team.process_stimulus_sync, stimulus)
-                # Notify response callbacks
-                for cb in self._response_callbacks:
-                    try:
-                        await cb(result)
-                    except Exception as e:
-                        logger.error("response_callback_error", error=str(e))
+            logger.info(
+                "tick_processing", tick=self._tick_count, stimulus=stimulus[:100]
+            )
+            # Run blocking agent calls in a thread to not block the Textual event loop
+            result = await asyncio.to_thread(self.team.process_stimulus_sync, stimulus)
+            # Notify response callbacks
+            for cb in self._response_callbacks:
+                try:
+                    await cb(result)
+                except Exception as e:
+                    logger.error("response_callback_error", error=str(e))
 
         # === AUTONOMOUS THINKING (no external stimulus) ===
         # Skip entirely while asleep — no internal monologue, no spontaneous
         # thoughts. The system needs rest.
         if not stimulus and self._idle_ticks > 0 and not suppress_llm:
+            goal_pursuit_enqueued = await self._maybe_enqueue_goal_pursuit()
+            # Keep idle_ticks until the queued goal stimulus is consumed on the
+            # next tick; that preserves pursuit debounce semantics.
 
             # Self-reflection (every 5 idle ticks)
             if (
-                self._idle_ticks % self._reflection_interval == 0
+                not goal_pursuit_enqueued
+                and self._idle_ticks % self._reflection_interval == 0
                 and getattr(self.flags, "self_reflection_enabled", True)
             ):
                 logger.info("self_reflection_triggered", idle_ticks=self._idle_ticks)
@@ -534,7 +590,8 @@ class ConsciousnessLoop:
 
             # Spontaneous thoughts (every 3 idle ticks, but not on reflection ticks)
             elif (
-                self._idle_ticks % 3 == 0
+                not goal_pursuit_enqueued
+                and self._idle_ticks % 3 == 0
                 and getattr(self.flags, "autonomous_thoughts_enabled", True)
             ):
                 logger.info("spontaneous_thought_triggered", idle_ticks=self._idle_ticks)
@@ -708,6 +765,11 @@ class ConsciousnessLoop:
                 if self.flags.goal_stack_enabled
                 else {"type": "disabled", "goals": []}
             ),
+            "goal_pursuit": (
+                self.goal_pursuit_policy.to_dict()
+                if self.flags.goal_pursuit_enabled
+                else {"type": "disabled"}
+            ),
             # Stage 12/16 — ML regulators payload + recovery_action shortcut
             # (used by ml.dataset.build_dataset_from_event_store)
             "ml": ml_payload,
@@ -803,4 +865,5 @@ class ConsciousnessLoop:
             "governance": self.governance.to_dict(),
             "circuit_breaker": self.circuit_breaker.to_dict(),
             "goal_stack": self.goal_stack.to_dict(),
+            "goal_pursuit": self.goal_pursuit_policy.to_dict(),
         }

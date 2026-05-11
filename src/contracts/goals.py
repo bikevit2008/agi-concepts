@@ -39,6 +39,24 @@ class GoalStatus(str, Enum):
 
 
 @dataclass
+class GoalPursuitDecision:
+    """A policy decision to actively pursue a goal via internal stimulus."""
+
+    goal_id: str
+    stimulus: str
+    tick: int
+    reason: str = ""
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "goal_id": self.goal_id,
+            "stimulus": self.stimulus,
+            "tick": self.tick,
+            "reason": self.reason,
+        }
+
+
+@dataclass
 class Goal:
     """A durable intention owned by the consciousness loop."""
 
@@ -159,6 +177,34 @@ class IGoalStack(Protocol):
         ...
 
 
+@runtime_checkable
+class IGoalPursuitPolicy(Protocol):
+    """Decides when a persistent goal should create an internal stimulus."""
+
+    def maybe_pursue(
+        self,
+        tick: int,
+        idle_ticks: int,
+        goal: Optional[Goal],
+        runtime_state: Dict[str, Any],
+        hysteresis_state: Dict[str, float],
+    ) -> Optional[GoalPursuitDecision]:
+        """Return a stimulus decision, or None if the loop should stay idle."""
+        ...
+
+    def record(self, decision: GoalPursuitDecision) -> None:
+        """Record an enqueued decision for debounce/cap accounting."""
+        ...
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Serialize policy counters for checkpointing."""
+        ...
+
+    def restore(self, data: Any) -> None:
+        """Restore policy counters from checkpoint data."""
+        ...
+
+
 class NullGoalStack:
     """No-op goal stack used when persistent intentions are disabled."""
 
@@ -211,4 +257,35 @@ class NullGoalStack:
         return None
 
 
-__all__ = ["Goal", "GoalStatus", "IGoalStack", "NullGoalStack"]
+class NullGoalPursuitPolicy:
+    """No-op pursuit policy used when goal-driven stimuli are disabled."""
+
+    def maybe_pursue(
+        self,
+        tick: int,
+        idle_ticks: int,
+        goal: Optional[Goal],
+        runtime_state: Dict[str, Any],
+        hysteresis_state: Dict[str, float],
+    ) -> Optional[GoalPursuitDecision]:
+        return None
+
+    def record(self, decision: GoalPursuitDecision) -> None:
+        return None
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {"type": "null"}
+
+    def restore(self, data: Any) -> None:
+        return None
+
+
+__all__ = [
+    "Goal",
+    "GoalPursuitDecision",
+    "GoalStatus",
+    "IGoalPursuitPolicy",
+    "IGoalStack",
+    "NullGoalPursuitPolicy",
+    "NullGoalStack",
+]

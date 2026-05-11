@@ -16,7 +16,11 @@ from src.contracts.governance import (
     NullConstitutionalAuditor,
     NullGovernanceKernel,
 )
-from src.contracts.goals import IGoalStack, NullGoalStack
+from src.contracts.goals import (
+    IGoalPursuitPolicy,
+    IGoalStack,
+    NullGoalStack,
+)
 from src.contracts.cost import ICostTracker, NullCostTracker
 from src.contracts.memory import (
     IMemoryStore,
@@ -57,6 +61,7 @@ from src.agents.reflection_consolidator import (
 )
 from src.engine.circadian import CircadianConfig, CircadianSleepManager
 from src.engine.circuit_breaker import SaturationCircuitBreaker
+from src.engine.goal_pursuit import DeterministicGoalPursuitPolicy
 from src.engine.goal_stack import PersistentGoalStack
 from src.engine.homeostatic_hysteresis import HomeostaticHysteresisEngine
 from src.engine.llm_memory_consolidator import LlmMemoryConsolidator
@@ -276,6 +281,24 @@ class ConsciousnessApp(App):
             if self.flags.goal_stack_enabled
             else NullGoalStack()
         )
+        self.goal_pursuit_policy: IGoalPursuitPolicy = DeterministicGoalPursuitPolicy(
+            min_idle_ticks=self.settings.goal_stack.pursuit_min_idle_ticks,
+            min_ticks_between_attempts=(
+                self.settings.goal_stack.pursuit_min_ticks_between_attempts
+            ),
+            progress_stale_after_ticks=(
+                self.settings.goal_stack.pursuit_progress_stale_after_ticks
+            ),
+            max_attempts_per_goal=(
+                self.settings.goal_stack.pursuit_max_attempts_per_goal
+            ),
+            pause_stress_threshold=(
+                self.settings.goal_stack.pursuit_pause_stress_threshold
+            ),
+            pause_low_priority_below=(
+                self.settings.goal_stack.pursuit_pause_low_priority_below
+            ),
+        )
 
         self.team = ConsciousnessTeam(
             model_settings=self.settings.model,
@@ -307,6 +330,7 @@ class ConsciousnessApp(App):
             collapse_forecaster=self.collapse_forecaster,
             recovery_policy=self.recovery_policy,
             goal_stack=self.goal_stack,
+            goal_pursuit_policy=self.goal_pursuit_policy,
         )
         self._loop_task: asyncio.Task | None = None
         self._monitor_task: asyncio.Task | None = None

@@ -49,6 +49,7 @@ class FeatureFlags:
 
     # Stage 29 — persistent intentions / goal stack
     goal_stack_enabled: bool = True
+    goal_pursuit_enabled: bool = True
 
     # Stage 4 — persistence
     persistence_enabled: bool = True

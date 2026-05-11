@@ -13,6 +13,7 @@ from src.config.settings import (
     CostSettings,
     DbSettings,
     GovernanceSettings,
+    GoalStackSettings,
     HysteresisParams,
     HysteresisSettings,
     LoggingSettings,
@@ -103,6 +104,7 @@ def load_settings(config_dir: Path | None = None) -> Settings:
     ml_regulators = _build_dataclass(
         MLRegulatorsSettings, data.get("ml_regulators", {})
     )
+    goal_stack = _build_dataclass(GoalStackSettings, data.get("goal_stack", {}))
 
     return Settings(
         model=model,
@@ -121,6 +123,7 @@ def load_settings(config_dir: Path | None = None) -> Settings:
         sleep=sleep,
         tools=tools,
         ml_regulators=ml_regulators,
+        goal_stack=goal_stack,
     )
 
 
