@@ -24,7 +24,7 @@ from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Optional
 
 from src.config.flags import FeatureFlags
-from src.config.loader import load_flags, load_settings
+from src.config.loader import PROJECT_ROOT, load_flags, load_settings
 from src.config.settings import Settings
 from src.bus.asyncio_bus import AsyncioEventBus
 from src.contracts.governance import (
@@ -54,6 +54,7 @@ from src.engine.goal_pursuit import DeterministicGoalPursuitPolicy
 from src.engine.goal_stack import PersistentGoalStack
 from src.engine.homeostatic_hysteresis import HomeostaticHysteresisEngine
 from src.engine.learning_store import PersistentLearningStore
+from src.engine.context_providers import build_local_context_providers
 from src.engine.shared_session import PersistentSharedSessionState
 from src.engine.task_ledger import PersistentTaskLedger
 from src.governance.kernel import DeterministicGovernanceKernel, GovernancePolicy
@@ -288,6 +289,16 @@ class LoopHarness:
         task_ledger: ITaskLedger = PersistentTaskLedger(
             max_tasks=settings.task_ledger.max_tasks,
         )
+        context_providers = (
+            build_local_context_providers(
+                settings.context_providers.roots,
+                project_root=PROJECT_ROOT,
+                allowed_suffixes=settings.context_providers.allowed_suffixes,
+                max_file_chars=settings.context_providers.max_file_chars,
+            )
+            if getattr(flags, "context_providers_enabled", True)
+            else []
+        )
 
         return ConsciousnessLoop(
             settings=settings,
@@ -311,6 +322,7 @@ class LoopHarness:
             learning_store=learning_store,
             shared_session=shared_session,
             task_ledger=task_ledger,
+            context_providers=context_providers,
         )
 
     async def run(

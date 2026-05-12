@@ -234,6 +234,19 @@ class TaskLedgerSettings:
 
 
 @dataclass
+class ContextProviderSettings:
+    """Stage 39 — deterministic local context providers."""
+
+    roots: List[str] = field(default_factory=list)
+    allowed_suffixes: List[str] = field(
+        default_factory=lambda: [".md", ".txt", ".yaml", ".yml"]
+    )
+    query_limit: int = 3
+    max_file_chars: int = 4000
+    max_document_chars: int = 1200
+
+
+@dataclass
 class ToolsSettings:
     """Stage 10 — capability-gated tool registry."""
 
@@ -266,3 +279,6 @@ class Settings:
     learning: LearningSettings = field(default_factory=LearningSettings)
     shared_session: SharedSessionSettings = field(default_factory=SharedSessionSettings)
     task_ledger: TaskLedgerSettings = field(default_factory=TaskLedgerSettings)
+    context_providers: ContextProviderSettings = field(
+        default_factory=ContextProviderSettings
+    )

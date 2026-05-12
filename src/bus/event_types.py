@@ -36,6 +36,8 @@ class EventTypes:
     COST_ALERT = "cost.alert"
     SLEEP_TRANSITION = "sleep.transition"
     LEARNING_CURATED = "learning.curated"
+    LEARNING_PROPOSAL_APPROVED = "learning.proposal.approved"
+    LEARNING_PROPOSAL_REJECTED = "learning.proposal.rejected"
 
 
 # JSON Schemas for the most important payloads. Simple — just enough to
@@ -232,6 +234,25 @@ EVENT_SCHEMAS: Dict[str, Dict[str, Any]] = {
             "decayed": {"type": "integer"},
         },
         "required": ["tick", "mode"],
+        "additionalProperties": True,
+    },
+    EventTypes.LEARNING_PROPOSAL_APPROVED: {
+        "type": "object",
+        "properties": {
+            "tick": {"type": "integer"},
+            "proposal_id": {"type": "string"},
+            "insight_id": {"type": "string"},
+        },
+        "required": ["tick", "proposal_id", "insight_id"],
+        "additionalProperties": True,
+    },
+    EventTypes.LEARNING_PROPOSAL_REJECTED: {
+        "type": "object",
+        "properties": {
+            "tick": {"type": "integer"},
+            "proposal_id": {"type": "string"},
+        },
+        "required": ["tick", "proposal_id"],
         "additionalProperties": True,
     },
 }

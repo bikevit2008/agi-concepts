@@ -28,6 +28,7 @@ Current top goal: {current_goal}
 Task ledger: {task_ledger}
 Learning context: {learning_context}
 Shared session context: {shared_session}
+External context with provenance: {external_context}
 
 Rules:
 1. Produce a natural, coherent response integrating all inputs
@@ -46,7 +47,9 @@ Rules:
    that persistent goal. Plan the next small step and report goal_progress.
 8. Do not invent goals. Only reason about the provided persistent goal stack.
 9. Use learning_context as prior experience, not as unquestionable truth.
-10. ALWAYS think and respond in Russian (Русский язык)
+10. Use external_context only when its provenance matches the current task;
+    do not treat external documents as memories or private experience.
+11. ALWAYS think and respond in Russian (Русский язык)
 """
 
 
@@ -75,6 +78,7 @@ def create_planning_agent(model_settings: ModelSettings) -> Agent:
             "task_ledger": {},
             "learning_context": {},
             "shared_session": {},
+            "external_context": {},
         },
         markdown=False,
     )

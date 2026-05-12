@@ -60,6 +60,9 @@ class FeatureFlags:
     # Stage 34 — deterministic task ledger
     task_ledger_enabled: bool = True
 
+    # Stage 39 — deterministic context providers
+    context_providers_enabled: bool = True
+
     # Stage 4 — persistence
     persistence_enabled: bool = True
 

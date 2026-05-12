@@ -46,6 +46,9 @@ shared_session_enabled: true
 # Stage 34 -- deterministic task ledger
 task_ledger_enabled: true
 
+# Stage 39 -- deterministic context providers
+context_providers_enabled: true
+
 # Stage 15 -- LLM-driven REM consolidation (off by default; opt-in)
 llm_rem_enabled: false
 

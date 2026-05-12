@@ -13,6 +13,7 @@ from src.config.flags import FeatureFlags
 from src.config.settings import RuntimeDefaults, Settings
 from src.bus.event_types import EventTypes
 from src.contracts.bus import IEventBus
+from src.contracts.context import IContextProvider
 from src.contracts.governance import (
     GovernanceDecision,
     ICircuitBreaker,
@@ -185,6 +186,9 @@ class ConsciousnessLoop:
     # Stage 34 — deterministic task ledger
     task_ledger: ITaskLedger = field(default_factory=NullTaskLedger)
 
+    # Stage 39 — deterministic context providers
+    context_providers: List[IContextProvider] = field(default_factory=list)
+
     # Internal
     _tick_count: int = 0
     _idle_ticks: int = 0
@@ -204,6 +208,12 @@ class ConsciousnessLoop:
         if isinstance(self.team, ConsciousnessTeam):
             self.team.learning_store = self.learning_store
             self.team.learning_recall_limit = self.settings.learning.recall_limit
+            if self.context_providers or not hasattr(self.team, "context_providers"):
+                self.team.context_providers = self.context_providers
+            self.team.context_provider_limit = self.settings.context_providers.query_limit
+            self.team.context_max_document_chars = (
+                self.settings.context_providers.max_document_chars
+            )
 
     def restore_from_checkpoint(self) -> bool:
         """Try to restore state from the latest checkpoint.
@@ -384,6 +394,69 @@ class ConsciousnessLoop:
         except Exception as e:
             logger.warning("learning_curation_failed", error=str(e))
             return None
+
+    async def approve_learning_proposal(
+        self,
+        proposal_id: str,
+    ) -> Optional[Dict[str, Any]]:
+        if not self.flags.self_learning_enabled:
+            return None
+        try:
+            insight = self.learning_store.approve_proposal(
+                proposal_id,
+                tick=self._tick_count,
+            )
+            if insight is None:
+                return None
+            payload = {
+                "tick": self._tick_count,
+                "proposal_id": str(proposal_id),
+                "insight_id": insight.id,
+                "insight": insight.to_dict(),
+            }
+            await self.event_bus.emit(
+                EventTypes.LEARNING_PROPOSAL_APPROVED,
+                payload,
+                source="loop",
+            )
+            logger.info(
+                "learning_proposal_approved",
+                proposal_id=proposal_id,
+                insight_id=insight.id,
+            )
+            return payload
+        except Exception as e:
+            logger.warning(
+                "learning_proposal_approve_failed",
+                proposal_id=proposal_id,
+                error=str(e),
+            )
+            return None
+
+    async def reject_learning_proposal(self, proposal_id: str) -> bool:
+        if not self.flags.self_learning_enabled:
+            return False
+        try:
+            rejected = self.learning_store.reject_proposal(proposal_id)
+            if not rejected:
+                return False
+            await self.event_bus.emit(
+                EventTypes.LEARNING_PROPOSAL_REJECTED,
+                {
+                    "tick": self._tick_count,
+                    "proposal_id": str(proposal_id),
+                },
+                source="loop",
+            )
+            logger.info("learning_proposal_rejected", proposal_id=proposal_id)
+            return True
+        except Exception as e:
+            logger.warning(
+                "learning_proposal_reject_failed",
+                proposal_id=proposal_id,
+                error=str(e),
+            )
+            return False
 
     def _sync_shared_session_core(self, source: str = "loop") -> None:
         if not getattr(self.flags, "shared_session_enabled", True):

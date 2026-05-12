@@ -15,6 +15,7 @@ from src.agents.reflection import create_reflection_agent
 from src.config.flags import FeatureFlags
 from src.config.settings import ModelSettings
 from src.contracts.bus import IEventBus
+from src.contracts.context import ContextDocument, IContextProvider
 from src.contracts.cost import ICostTracker, NullCostTracker
 from src.contracts.governance import (
     GovernanceDecision,
@@ -79,6 +80,11 @@ class ConsciousnessTeam:
 
     # Stage 34 — deterministic task ledger
     task_ledger: ITaskLedger = field(default_factory=NullTaskLedger)
+
+    # Stage 39 — deterministic external context providers
+    context_providers: List[IContextProvider] = field(default_factory=list)
+    context_provider_limit: int = 3
+    context_max_document_chars: int = 1200
 
     # Internal state
     memories: List[str] = field(default_factory=list)
@@ -187,6 +193,69 @@ class ConsciousnessTeam:
         except Exception as e:
             logger.warning("task_context_failed", error=str(e))
             return {"type": "error", "tasks": []}
+
+    def _external_context(self, query: str = "") -> Dict[str, Any]:
+        if not getattr(self.flags, "context_providers_enabled", True):
+            return {"type": "disabled", "documents": [], "provenance": []}
+        providers = list(getattr(self, "context_providers", []) or [])
+        if not providers:
+            return {"type": "empty", "documents": [], "provenance": []}
+        query_text = str(query or "")
+        limit = max(0, int(getattr(self, "context_provider_limit", 3) or 0))
+        if limit == 0:
+            return {
+                "type": "context_providers",
+                "query": query_text,
+                "documents": [],
+                "provenance": [],
+                "document_count": 0,
+            }
+
+        ranked: List[tuple[float, str, ContextDocument]] = []
+        for provider in providers:
+            provider_id = str(getattr(provider, "provider_id", "context_provider"))
+            try:
+                answer = provider.query(query_text, limit=limit)
+            except Exception as e:
+                logger.warning(
+                    "context_provider_query_failed",
+                    provider_id=provider_id,
+                    error=str(e),
+                )
+                continue
+            for document in answer.documents:
+                ranked.append((float(document.score or 0.0), provider_id, document))
+
+        ranked.sort(key=lambda item: (item[0], item[1], item[2].name), reverse=True)
+        max_chars = max(
+            120,
+            int(getattr(self, "context_max_document_chars", 1200) or 1200),
+        )
+        documents = []
+        provenance = []
+        for score, provider_id, document in ranked[:limit]:
+            doc = document.to_dict()
+            doc["provider_id"] = provider_id
+            doc["text"] = str(doc.get("text") or "")[:max_chars]
+            doc["score"] = round(score, 4)
+            documents.append(doc)
+            provenance.append(
+                {
+                    "provider_id": provider_id,
+                    "document_id": document.id,
+                    "name": document.name,
+                    "uri": document.uri,
+                    "score": round(score, 4),
+                }
+            )
+
+        return {
+            "type": "context_providers",
+            "query": query_text,
+            "document_count": len(documents),
+            "documents": documents,
+            "provenance": provenance,
+        }
 
     def snapshot_memories(self) -> List[str]:
         if self.flags.memory_store_enabled:
@@ -354,6 +423,7 @@ class ConsciousnessTeam:
         # Planning
         goal_context = self._goal_context()
         top_goal = self._top_goal_dict()
+        default_context_query = top_goal.get("description", "") if top_goal else ""
         self._planning_agent.session_state = {
             "temperature": rt.temperature,
             "context_window": rt.context_window,
@@ -368,11 +438,9 @@ class ConsciousnessTeam:
             "task_ledger": self._task_context(
                 top_goal.get("id") if top_goal else None
             ),
-            "task_ledger": self._task_context(
-                top_goal.get("id") if top_goal else None
-            ),
             "learning_context": self._learning_context(),
             "shared_session": self._shared_session_context("Planning"),
+            "external_context": self._external_context(default_context_query),
         }
 
     def process_stimulus_sync(self, stimulus: str) -> Dict[str, Any]:
@@ -538,6 +606,7 @@ class ConsciousnessTeam:
             try:
                 active_goal = self._top_goal_dict()
                 learning_context = self._learning_context(stimulus)
+                external_context = self._external_context(stimulus)
                 planning_input = _build_planning_input(
                     stimulus,
                     perception_data,
@@ -557,7 +626,10 @@ class ConsciousnessTeam:
                     ),
                     "learning_context": learning_context,
                     "shared_session": self._shared_session_context("Planning"),
+                    "external_context": external_context,
                 })
+                if external_context.get("document_count", 0) > 0:
+                    result["external_context"] = external_context
                 self._planning_agent.model.temperature = self.runtime_state.temperature
                 # max_tokens driven by vitality (energy + bandwidth)
                 # Suppressed (low vitality) → short answers (min 64)
@@ -626,6 +698,7 @@ class ConsciousnessTeam:
             "current_goal": top_goal,
             "learning_context": self._learning_context(learning_query),
             "shared_session": self._shared_session_context("Reflection"),
+            "external_context": self._external_context(learning_query),
         }
 
         self._reflection_agent.model.temperature = min(2.0, rt.temperature + 0.2)
@@ -703,6 +776,7 @@ class ConsciousnessTeam:
             ),
             "learning_context": self._learning_context(learning_query),
             "shared_session": self._shared_session_context("Planning"),
+            "external_context": self._external_context(learning_query),
         })
 
         self._planning_agent.model.temperature = min(2.0, rt.temperature + 0.3)

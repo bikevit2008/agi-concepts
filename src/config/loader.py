@@ -10,6 +10,7 @@ from src.config.flags import FeatureFlags
 from src.config.settings import (
     BusSettings,
     CircuitBreakerSettings,
+    ContextProviderSettings,
     CostSettings,
     DbSettings,
     GovernanceSettings,
@@ -114,6 +115,10 @@ def load_settings(config_dir: Path | None = None) -> Settings:
         data.get("shared_session", {}),
     )
     task_ledger = _build_dataclass(TaskLedgerSettings, data.get("task_ledger", {}))
+    context_providers = _build_dataclass(
+        ContextProviderSettings,
+        data.get("context_providers", {}),
+    )
 
     return Settings(
         model=model,
@@ -136,6 +141,7 @@ def load_settings(config_dir: Path | None = None) -> Settings:
         learning=learning,
         shared_session=shared_session,
         task_ledger=task_ledger,
+        context_providers=context_providers,
     )
 
 

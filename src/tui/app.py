@@ -8,7 +8,7 @@ from textual.app import App
 from src.bus.asyncio_bus import AsyncioEventBus
 from src.bus.event_types import EventTypes
 from src.config.flags import FeatureFlags
-from src.config.loader import load_flags, load_settings
+from src.config.loader import PROJECT_ROOT, load_flags, load_settings
 from src.config.settings import Settings
 from src.contracts.bus import EventEnvelope, IEventBus
 from src.contracts.governance import (
@@ -70,6 +70,7 @@ from src.engine.goal_pursuit import DeterministicGoalPursuitPolicy
 from src.engine.goal_stack import PersistentGoalStack
 from src.engine.homeostatic_hysteresis import HomeostaticHysteresisEngine
 from src.engine.learning_store import PersistentLearningStore
+from src.engine.context_providers import build_local_context_providers
 from src.engine.shared_session import PersistentSharedSessionState
 from src.engine.task_ledger import PersistentTaskLedger
 from src.engine.llm_memory_consolidator import LlmMemoryConsolidator
@@ -334,6 +335,12 @@ class ConsciousnessApp(App):
             if getattr(self.flags, "task_ledger_enabled", True)
             else NullTaskLedger()
         )
+        self.context_providers = build_local_context_providers(
+            self.settings.context_providers.roots,
+            project_root=PROJECT_ROOT,
+            allowed_suffixes=self.settings.context_providers.allowed_suffixes,
+            max_file_chars=self.settings.context_providers.max_file_chars,
+        )
 
         self.team = ConsciousnessTeam(
             model_settings=self.settings.model,
@@ -350,6 +357,15 @@ class ConsciousnessApp(App):
             learning_recall_limit=self.settings.learning.recall_limit,
             shared_session=self.shared_session,
             task_ledger=self.task_ledger,
+            context_providers=(
+                self.context_providers
+                if getattr(self.flags, "context_providers_enabled", True)
+                else []
+            ),
+            context_provider_limit=self.settings.context_providers.query_limit,
+            context_max_document_chars=(
+                self.settings.context_providers.max_document_chars
+            ),
         )
         self.consciousness_loop = ConsciousnessLoop(
             settings=self.settings,
@@ -373,6 +389,11 @@ class ConsciousnessApp(App):
             learning_store=self.learning_store,
             shared_session=self.shared_session,
             task_ledger=self.task_ledger,
+            context_providers=(
+                self.context_providers
+                if getattr(self.flags, "context_providers_enabled", True)
+                else []
+            ),
         )
         self._loop_task: asyncio.Task | None = None
         self._monitor_task: asyncio.Task | None = None
@@ -590,6 +611,10 @@ class ConsciousnessApp(App):
                 parts.append(f"[{mood}]")
             if insight:
                 parts.append(f"-- {insight}")
+                proposals = self.learning_store.proposals(limit=1)
+                if proposals:
+                    proposal = proposals[0]
+                    parts.append(f"[learning proposal: {proposal.id}]")
             if internal:
                 parts.append(f">> {internal}")
             screen.add_chat_message("reflection", " ".join(parts))
@@ -676,10 +701,64 @@ class ConsciousnessApp(App):
 
     async def on_chat_input_stimulus_submitted(self, message: ChatInput.StimulusSubmitted) -> None:
         """Handle stimulus submission from chat input."""
+        if await self._handle_learning_command(message.stimulus):
+            return
         screen = self.screen
         if isinstance(screen, MainScreen):
             screen.add_chat_message("user", message.stimulus)
         await self.consciousness_loop.submit_stimulus(message.stimulus)
+
+    async def _handle_learning_command(self, stimulus: str) -> bool:
+        text = str(stimulus or "").strip()
+        if not text.startswith("/learn"):
+            return False
+        screen = self.screen
+        parts = text.split()
+        action = parts[1].lower() if len(parts) > 1 else ""
+        proposal_id = parts[2] if len(parts) > 2 else ""
+        if action == "proposals":
+            proposals = self.learning_store.proposals(limit=5)
+            message = (
+                "\n".join(
+                    f"{proposal.id}: {proposal.title}"
+                    for proposal in proposals
+                )
+                if proposals
+                else "No pending learning proposals."
+            )
+            if isinstance(screen, MainScreen):
+                screen.add_chat_message("info", message)
+            return True
+        if action == "approve" and proposal_id:
+            payload = await self.consciousness_loop.approve_learning_proposal(
+                proposal_id,
+            )
+            message = (
+                f"Approved learning proposal {proposal_id}."
+                if payload
+                else f"Learning proposal {proposal_id} was not found."
+            )
+            if isinstance(screen, MainScreen):
+                screen.add_chat_message("info", message)
+            return True
+        if action == "reject" and proposal_id:
+            rejected = await self.consciousness_loop.reject_learning_proposal(
+                proposal_id,
+            )
+            message = (
+                f"Rejected learning proposal {proposal_id}."
+                if rejected
+                else f"Learning proposal {proposal_id} was not found."
+            )
+            if isinstance(screen, MainScreen):
+                screen.add_chat_message("info", message)
+            return True
+        if isinstance(screen, MainScreen):
+            screen.add_chat_message(
+                "info",
+                "Usage: /learn proposals | /learn approve <id> | /learn reject <id>",
+            )
+        return True
 
     def action_toggle_flags(self) -> None:
         self.push_screen(FlagsScreen(self.flags))

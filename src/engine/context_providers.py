@@ -64,6 +64,32 @@ class LocalFileContextProvider:
             )
 
 
+def build_local_context_providers(
+    root_paths: Sequence[str],
+    project_root: str | Path | None = None,
+    allowed_suffixes: Sequence[str] = (".md", ".txt", ".yaml", ".yml"),
+    max_file_chars: int = 4000,
+) -> List[LocalFileContextProvider]:
+    """Build local providers from config paths without touching missing roots."""
+    base = Path(project_root) if project_root is not None else Path.cwd()
+    providers: List[LocalFileContextProvider] = []
+    for idx, raw_path in enumerate(root_paths):
+        if not str(raw_path).strip():
+            continue
+        path = Path(str(raw_path))
+        if not path.is_absolute():
+            path = base / path
+        providers.append(
+            LocalFileContextProvider(
+                root_path=str(path),
+                provider_id=f"local_files:{idx}:{path.name or 'root'}",
+                allowed_suffixes=tuple(allowed_suffixes),
+                max_file_chars=max_file_chars,
+            )
+        )
+    return providers
+
+
 def _rank_documents(
     documents: Sequence[ContextDocument],
     query: str,
@@ -109,4 +135,8 @@ def _stable_id(value: str) -> str:
     return hashlib.sha256(value.encode("utf-8")).hexdigest()[:12]
 
 
-__all__ = ["LocalFileContextProvider", "StaticContextProvider"]
+__all__ = [
+    "LocalFileContextProvider",
+    "StaticContextProvider",
+    "build_local_context_providers",
+]

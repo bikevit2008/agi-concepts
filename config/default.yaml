@@ -164,3 +164,11 @@ shared_session:
 # Stage 34 — deterministic task ledger
 task_ledger:
   max_tasks: 200
+
+# Stage 39 — deterministic local context providers
+context_providers:
+  roots: []
+  allowed_suffixes: [".md", ".txt", ".yaml", ".yml"]
+  query_limit: 3
+  max_file_chars: 4000
+  max_document_chars: 1200

@@ -129,6 +129,42 @@ def test_learning_agentic_mode_saves_only_when_requested() -> None:
     assert store.to_dict()["proposal_count"] == 0
 
 
+def test_loop_approves_and_rejects_learning_proposals(tmp_path: Path) -> None:
+    store = PersistentLearningStore(mode="propose")
+    store.record_reflection(
+        tick=1,
+        reflection={
+            "thought": "Approval should turn proposal into durable learning.",
+            "insight": "Learning proposals need explicit approval before recall.",
+        },
+    )
+    proposal = store.proposals(limit=1)[0]
+    loop, checkpoint = _build_loop_with_learning_checkpoint(tmp_path, store)
+    try:
+        payload = asyncio.run(loop.approve_learning_proposal(proposal.id))
+        assert payload is not None
+        assert payload["proposal_id"] == proposal.id
+        assert store.to_dict()["insight_count"] == 1
+        assert store.to_dict()["proposal_count"] == 0
+        approved_events = loop.event_bus.history(EventTypes.LEARNING_PROPOSAL_APPROVED)
+        assert approved_events[-1].payload["insight_id"] == payload["insight_id"]
+
+        store.record_reflection(
+            tick=2,
+            reflection={
+                "thought": "Reject should discard pending learning.",
+                "insight": "Rejected learning proposals should not persist.",
+            },
+        )
+        reject_id = store.proposals(limit=1)[0].id
+        assert asyncio.run(loop.reject_learning_proposal(reject_id)) is True
+        assert store.to_dict()["proposal_count"] == 0
+        rejected_events = loop.event_bus.history(EventTypes.LEARNING_PROPOSAL_REJECTED)
+        assert rejected_events[-1].payload["proposal_id"] == reject_id
+    finally:
+        checkpoint.close()
+
+
 def test_learning_curator_merges_decays_and_prunes_stale_insights() -> None:
     store = PersistentLearningStore(
         stale_after_ticks=5,

@@ -29,6 +29,7 @@ Current top goal: {current_goal}
 Task ledger: {task_ledger}
 Learning context: {learning_context}
 Shared session context: {shared_session}
+External context with provenance: {external_context}
 
 Rules:
 1. Reflect on your current state — how do you "feel"? What patterns do you notice?
@@ -53,7 +54,9 @@ Rules:
    it still fits your current body state and constraints.
 10. Use learning_context to notice recurring patterns and avoid relearning
     the same lesson, but revise stale insights when the current state differs.
-11. ALWAYS think and respond in Russian (Русский язык)
+11. Use external_context as grounded reference material only when relevant;
+    keep it separate from self-memory and cite provenance mentally.
+12. ALWAYS think and respond in Russian (Русский язык)
 """
 
 
@@ -83,6 +86,7 @@ def create_reflection_agent(model_settings: ModelSettings) -> Agent:
             "task_ledger": {},
             "learning_context": {},
             "shared_session": {},
+            "external_context": {},
         },
         markdown=False,
     )
