@@ -21,6 +21,12 @@ class EventTypes:
     PLANNING_OUTPUT = "planning.output"
     REFLECTION_OUTPUT = "reflection.output"
 
+    PIPELINE_STARTED = "pipeline.started"
+    PIPELINE_COMPLETED = "pipeline.completed"
+    PIPELINE_ERROR = "pipeline.error"
+    AGENT_STEP_COMPLETED = "agent.step.completed"
+    AGENT_STEP_ERROR = "agent.step.error"
+
     STATE_SNAPSHOT = "state.snapshot"
     HYSTERESIS_UPDATE = "hysteresis.update"
     RUNTIME_CHANGE = "runtime.change"
@@ -29,6 +35,7 @@ class EventTypes:
     CIRCUIT_BREAKER_TRIPPED = "circuit_breaker.tripped"
     COST_ALERT = "cost.alert"
     SLEEP_TRANSITION = "sleep.transition"
+    LEARNING_CURATED = "learning.curated"
 
 
 # JSON Schemas for the most important payloads. Simple — just enough to
@@ -90,6 +97,57 @@ EVENT_SCHEMAS: Dict[str, Dict[str, Any]] = {
             "internal_stimulus": {"type": ["string", "null"]},
         },
         "required": ["thought"],
+        "additionalProperties": True,
+    },
+    EventTypes.PIPELINE_STARTED: {
+        "type": "object",
+        "properties": {
+            "tick": {"type": "integer"},
+            "kind": {"type": "string"},
+            "stimulus": {"type": "string"},
+        },
+        "required": ["tick", "kind"],
+        "additionalProperties": True,
+    },
+    EventTypes.PIPELINE_COMPLETED: {
+        "type": "object",
+        "properties": {
+            "tick": {"type": "integer"},
+            "kind": {"type": "string"},
+            "steps": {"type": "array"},
+        },
+        "required": ["tick", "kind"],
+        "additionalProperties": True,
+    },
+    EventTypes.PIPELINE_ERROR: {
+        "type": "object",
+        "properties": {
+            "tick": {"type": "integer"},
+            "kind": {"type": "string"},
+            "error": {"type": "string"},
+        },
+        "required": ["tick", "kind", "error"],
+        "additionalProperties": True,
+    },
+    EventTypes.AGENT_STEP_COMPLETED: {
+        "type": "object",
+        "properties": {
+            "tick": {"type": "integer"},
+            "agent": {"type": "string"},
+            "kind": {"type": "string"},
+        },
+        "required": ["tick", "agent"],
+        "additionalProperties": True,
+    },
+    EventTypes.AGENT_STEP_ERROR: {
+        "type": "object",
+        "properties": {
+            "tick": {"type": "integer"},
+            "agent": {"type": "string"},
+            "kind": {"type": "string"},
+            "error": {"type": "string"},
+        },
+        "required": ["tick", "agent", "error"],
         "additionalProperties": True,
     },
     EventTypes.STATE_SNAPSHOT: {
@@ -160,6 +218,20 @@ EVENT_SCHEMAS: Dict[str, Dict[str, Any]] = {
             "tick": {"type": "integer"},
         },
         "required": ["to_state"],
+        "additionalProperties": True,
+    },
+    EventTypes.LEARNING_CURATED: {
+        "type": "object",
+        "properties": {
+            "tick": {"type": "integer"},
+            "mode": {"type": "string"},
+            "before": {"type": "integer"},
+            "after": {"type": "integer"},
+            "removed": {"type": "integer"},
+            "merged": {"type": "integer"},
+            "decayed": {"type": "integer"},
+        },
+        "required": ["tick", "mode"],
         "additionalProperties": True,
     },
 }

@@ -25,7 +25,9 @@ Recalled memories: {recalled_memories}
 Active hysteresis: {active_channels}
 Persistent goal stack: {goal_stack}
 Current top goal: {current_goal}
+Task ledger: {task_ledger}
 Learning context: {learning_context}
+Shared session context: {shared_session}
 
 Rules:
 1. Produce a natural, coherent response integrating all inputs
@@ -70,7 +72,9 @@ def create_planning_agent(model_settings: ModelSettings) -> Agent:
             "active_channels": {},
             "goal_stack": [],
             "current_goal": None,
+            "task_ledger": {},
             "learning_context": {},
+            "shared_session": {},
         },
         markdown=False,
     )

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import copy
+import re
 import time
 from dataclasses import dataclass, field
 from typing import Any, Callable, Coroutine, Dict, List, Optional
@@ -50,6 +51,7 @@ from src.contracts.persistence import (
     NullEventStore,
     Snapshot,
 )
+from src.contracts.session import ISharedSessionState, NullSharedSessionState
 from src.contracts.sleep import (
     IMemoryConsolidator,
     ISleepManager,
@@ -58,6 +60,7 @@ from src.contracts.sleep import (
     SleepPhase,
     WakeState,
 )
+from src.contracts.tasks import ITaskLedger, NullTaskLedger, TaskStatus
 from src.core.hysteresis import HysteresisEngine
 from src.core.runtime_state import RuntimeState
 from src.engine.homeostatic_hysteresis import HomeostaticHysteresisEngine
@@ -94,6 +97,30 @@ def gated_stimulate(
         hysteresis.stimulate(channel, intensity)
         governance.record(request)
     return decision
+
+
+def _compact_for_shared_session(payload: Dict[str, Any]) -> Dict[str, Any]:
+    """Keep shared-session agent outputs bounded and JSON-friendly."""
+    compact: Dict[str, Any] = {}
+    for key, value in payload.items():
+        if isinstance(value, str):
+            compact[key] = value[:500]
+        elif isinstance(value, dict):
+            compact[key] = _compact_for_shared_session(value)
+        elif isinstance(value, list):
+            compact[key] = [
+                (
+                    _compact_for_shared_session(item)
+                    if isinstance(item, dict)
+                    else str(item)[:240]
+                )
+                for item in value[:8]
+            ]
+        elif isinstance(value, (int, float, bool)) or value is None:
+            compact[key] = value
+        else:
+            compact[key] = str(value)[:240]
+    return compact
 
 
 @dataclass
@@ -151,6 +178,12 @@ class ConsciousnessLoop:
 
     # Stage 32 — lightweight self-learning context
     learning_store: ILearningStore = field(default_factory=NullLearningStore)
+
+    # Stage 33 — shared session blackboard
+    shared_session: ISharedSessionState = field(default_factory=NullSharedSessionState)
+
+    # Stage 34 — deterministic task ledger
+    task_ledger: ITaskLedger = field(default_factory=NullTaskLedger)
 
     # Internal
     _tick_count: int = 0
@@ -253,6 +286,14 @@ class ConsciousnessLoop:
             if learning_payload:
                 self.learning_store.restore(learning_payload)
                 logger.info("learning_store_restored")
+            shared_session_payload = extra.get("shared_session")
+            if shared_session_payload:
+                self.shared_session.restore(shared_session_payload)
+                logger.info("shared_session_restored")
+            task_payload = extra.get("task_ledger")
+            if task_payload:
+                self.task_ledger.restore(task_payload)
+                logger.info("task_ledger_restored")
 
             self._tick_count = snapshot.tick
             logger.info(
@@ -314,6 +355,225 @@ class ConsciousnessLoop:
         except Exception as e:
             logger.warning("learning_context_snapshot_failed", error=str(e))
             return {"type": "error", "learned_insights": []}
+
+    async def _maybe_curate_learning(self) -> Optional[Dict[str, Any]]:
+        if not self.flags.self_learning_enabled:
+            return None
+        interval = getattr(self.settings.learning, "curation_interval_ticks", 0)
+        try:
+            interval_n = int(interval)
+        except (TypeError, ValueError):
+            interval_n = 0
+        if interval_n <= 0 or self._tick_count % interval_n != 0:
+            return None
+        try:
+            stats = self.learning_store.curate(tick=self._tick_count)
+            if stats.get("type") == "null":
+                return stats
+            await self.event_bus.emit(
+                EventTypes.LEARNING_CURATED,
+                {
+                    **stats,
+                    "tick": self._tick_count,
+                    "mode": str(stats.get("mode") or ""),
+                },
+                source="loop",
+            )
+            logger.info("learning_curated", **stats)
+            return stats
+        except Exception as e:
+            logger.warning("learning_curation_failed", error=str(e))
+            return None
+
+    def _sync_shared_session_core(self, source: str = "loop") -> None:
+        if not getattr(self.flags, "shared_session_enabled", True):
+            return
+        try:
+            top_goal = (
+                self.goal_stack.top_active()
+                if self.flags.goal_stack_enabled
+                else None
+            )
+            memory_count = (
+                self.team._stored_memory_count()
+                if hasattr(self.team, "_stored_memory_count")
+                else len(getattr(self.team, "memories", []))
+            )
+            self.shared_session.update_namespace(
+                "runtime",
+                self.runtime_state.to_dict(),
+                tick=self._tick_count,
+                source=source,
+                replace=True,
+            )
+            self.shared_session.update_namespace(
+                "hysteresis",
+                {
+                    "active_channels": self.hysteresis.get_active_channels(),
+                    "channel_values": {
+                        name: round(channel.value, 4)
+                        for name, channel in self.hysteresis.channels.items()
+                    },
+                },
+                tick=self._tick_count,
+                source=source,
+                replace=True,
+            )
+            self.shared_session.update_namespace(
+                "goals",
+                {
+                    "stack": (
+                        self.goal_stack.context(limit=5)
+                        if self.flags.goal_stack_enabled
+                        else []
+                    ),
+                    "top": top_goal.to_dict() if top_goal else None,
+                },
+                tick=self._tick_count,
+                source=source,
+                replace=True,
+            )
+            self.shared_session.update_namespace(
+                "learning",
+                self._learning_context_snapshot(limit=0),
+                tick=self._tick_count,
+                source=source,
+                replace=True,
+            )
+            self.shared_session.update_namespace(
+                "memory",
+                {"store_size": memory_count},
+                tick=self._tick_count,
+                source=source,
+                replace=True,
+            )
+            self.shared_session.update_namespace(
+                "tasks",
+                (
+                    self.task_ledger.context(
+                        goal_id=top_goal.id if top_goal else None,
+                        limit=5,
+                    )
+                    if getattr(self.flags, "task_ledger_enabled", True)
+                    else {"type": "disabled", "tasks": []}
+                ),
+                tick=self._tick_count,
+                source=source,
+                replace=True,
+            )
+        except Exception as e:
+            logger.warning("shared_session_sync_failed", error=str(e), source=source)
+
+    def _record_shared_agent_result(
+        self,
+        kind: str,
+        payload: Optional[Dict[str, Any]],
+    ) -> None:
+        if not payload or not getattr(self.flags, "shared_session_enabled", True):
+            return
+        try:
+            self.shared_session.update_namespace(
+                "agents",
+                {kind: _compact_for_shared_session(payload)},
+                tick=self._tick_count,
+                source=f"loop.{kind}",
+            )
+        except Exception as e:
+            logger.warning("shared_session_agent_record_failed", kind=kind, error=str(e))
+
+    def _record_task_outcome_from_result(
+        self,
+        stimulus: str,
+        result: Optional[Dict[str, Any]],
+    ) -> None:
+        if not (
+            getattr(self.flags, "task_ledger_enabled", True)
+            and stimulus
+            and result
+        ):
+            return
+        match = re.search(r"\[task:([^\]]+)\]", stimulus)
+        if not match:
+            return
+        task_id = match.group(1)
+        planning = result.get("planning")
+        planning = planning if isinstance(planning, dict) else {}
+        progress = str(planning.get("goal_progress") or "").strip().lower()
+        reason = str(
+            planning.get("goal_progress_reason")
+            or planning.get("intent")
+            or result.get("response")
+            or ""
+        )
+        try:
+            if progress in {"advanced", "advance", "progress", "pursued", "completed", "complete", "done", "resolved"}:
+                self.task_ledger.update_status(
+                    task_id,
+                    TaskStatus.COMPLETED,
+                    tick=self._tick_count,
+                    note=reason,
+                    result=str(result.get("response") or "")[:500],
+                )
+            elif progress in {"blocked", "stalled", "failed", "abandoned", "abandon", "dropped"}:
+                self.task_ledger.update_status(
+                    task_id,
+                    TaskStatus.FAILED,
+                    tick=self._tick_count,
+                    note=reason,
+                    result=str(result.get("response") or "")[:500],
+                )
+        except Exception as e:
+            logger.warning("task_outcome_record_failed", task_id=task_id, error=str(e))
+
+    async def _emit_lifecycle_event(
+        self,
+        event_type: str,
+        payload: Dict[str, Any],
+        source: str = "loop",
+    ) -> None:
+        try:
+            await self.event_bus.emit(event_type, payload, source=source)
+        except Exception as e:
+            logger.warning(
+                "lifecycle_event_emit_failed",
+                event_type=event_type,
+                error=str(e),
+            )
+
+    async def _emit_agent_step_events(
+        self,
+        result: Optional[Dict[str, Any]],
+        kind: str,
+    ) -> None:
+        if not result:
+            return
+        step_keys = {
+            "perception": "Perception",
+            "emotion": "Emotion",
+            "memory": "Memory",
+            "planning": "Planning",
+        }
+        for key, agent_name in step_keys.items():
+            if key in result:
+                await self._emit_lifecycle_event(
+                    EventTypes.AGENT_STEP_COMPLETED,
+                    {
+                        "tick": self._tick_count,
+                        "kind": kind,
+                        "agent": agent_name,
+                    },
+                )
+            error_key = f"{key}_error"
+            if error_key in result:
+                await self._emit_lifecycle_event(
+                    EventTypes.AGENT_STEP_ERROR,
+                    {
+                        "tick": self._tick_count,
+                        "kind": kind,
+                        "agent": agent_name,
+                        "error": str(result.get(error_key) or ""),
+                    },
+                )
 
     def _apply_recovery(self, decision) -> None:
         """Act on a RecoveryDecision. Best-effort, non-blocking."""
@@ -381,13 +641,32 @@ class ConsciousnessLoop:
             )
             if decision is None:
                 return False
-            await self._stimulus_queue.put(decision.stimulus)
+            stimulus = decision.stimulus
+            task_id: Optional[str] = None
+            if getattr(self.flags, "task_ledger_enabled", True) and goal is not None:
+                available = self.task_ledger.available_tasks(goal_id=goal.id, limit=1)
+                if available:
+                    task = available[0]
+                    task_id = task.id
+                    self.task_ledger.update_status(
+                        task.id,
+                        TaskStatus.IN_PROGRESS,
+                        tick=self._tick_count,
+                        note="enqueued for goal pursuit",
+                    )
+                    stimulus = (
+                        f"[goal:{goal.id}][task:{task.id}] Continue task: "
+                        f"{task.title}. Check current body/resource constraints "
+                        "and report goal_progress."
+                    )
+            await self._stimulus_queue.put(stimulus)
             self.goal_pursuit_policy.record(decision)
             logger.info(
                 "goal_pursuit_enqueued",
                 goal_id=decision.goal_id,
+                task_id=task_id,
                 reason=decision.reason,
-                stimulus=decision.stimulus[:120],
+                stimulus=stimulus[:120],
             )
             return True
         except Exception as e:
@@ -440,6 +719,8 @@ class ConsciousnessLoop:
                 "goal_stack": self.goal_stack.to_dict(),
                 "goal_pursuit": self.goal_pursuit_policy.to_dict(),
                 "learning": self.learning_store.to_dict(),
+                "shared_session": self.shared_session.to_dict(),
+                "task_ledger": self.task_ledger.to_dict(),
             },
         )
 
@@ -566,6 +847,8 @@ class ConsciousnessLoop:
             except Exception as e:
                 logger.warning("goal_stack_refresh_failed", error=str(e))
 
+        self._sync_shared_session_core(source="pre_tick")
+
         # Stage 9 — advance sleep model and decide whether to suppress LLM
         sleep_decision = None
         if self.flags.sleep_mode_enabled:
@@ -609,8 +892,45 @@ class ConsciousnessLoop:
             logger.info(
                 "tick_processing", tick=self._tick_count, stimulus=stimulus[:100]
             )
+            await self._emit_lifecycle_event(
+                EventTypes.PIPELINE_STARTED,
+                {
+                    "tick": self._tick_count,
+                    "kind": "stimulus",
+                    "stimulus": stimulus[:240],
+                },
+            )
             # Run blocking agent calls in a thread to not block the Textual event loop
-            result = await asyncio.to_thread(self.team.process_stimulus_sync, stimulus)
+            try:
+                result = await asyncio.to_thread(self.team.process_stimulus_sync, stimulus)
+            except Exception as e:
+                await self._emit_lifecycle_event(
+                    EventTypes.PIPELINE_ERROR,
+                    {
+                        "tick": self._tick_count,
+                        "kind": "stimulus",
+                        "error": str(e),
+                    },
+                )
+                raise
+            self._record_shared_agent_result(
+                "stimulus",
+                {"stimulus": stimulus, "result": result},
+            )
+            self._record_task_outcome_from_result(stimulus, result)
+            await self._emit_agent_step_events(result, kind="stimulus")
+            await self._emit_lifecycle_event(
+                EventTypes.PIPELINE_COMPLETED,
+                {
+                    "tick": self._tick_count,
+                    "kind": "stimulus",
+                    "steps": [
+                        key
+                        for key in ("perception", "emotion", "memory", "planning")
+                        if result and key in result
+                    ],
+                },
+            )
             # Notify response callbacks
             for cb in self._response_callbacks:
                 try:
@@ -634,8 +954,29 @@ class ConsciousnessLoop:
                 and getattr(self.flags, "self_reflection_enabled", True)
             ):
                 logger.info("self_reflection_triggered", idle_ticks=self._idle_ticks)
+                await self._emit_lifecycle_event(
+                    EventTypes.PIPELINE_STARTED,
+                    {"tick": self._tick_count, "kind": "reflection"},
+                )
                 reflection = await asyncio.to_thread(self.team.reflect_sync)
                 if reflection:
+                    self._record_shared_agent_result("reflection", reflection)
+                    await self._emit_lifecycle_event(
+                        EventTypes.AGENT_STEP_COMPLETED,
+                        {
+                            "tick": self._tick_count,
+                            "kind": "reflection",
+                            "agent": "Reflection",
+                        },
+                    )
+                    await self._emit_lifecycle_event(
+                        EventTypes.PIPELINE_COMPLETED,
+                        {
+                            "tick": self._tick_count,
+                            "kind": "reflection",
+                            "steps": ["reflection"],
+                        },
+                    )
                     self._maybe_record_learning_reflection(reflection)
                     for cb in self._reflection_callbacks:
                         try:
@@ -659,8 +1000,29 @@ class ConsciousnessLoop:
                 and getattr(self.flags, "autonomous_thoughts_enabled", True)
             ):
                 logger.info("spontaneous_thought_triggered", idle_ticks=self._idle_ticks)
+                await self._emit_lifecycle_event(
+                    EventTypes.PIPELINE_STARTED,
+                    {"tick": self._tick_count, "kind": "thought"},
+                )
                 thought = await asyncio.to_thread(self.team.spontaneous_thought_sync)
                 if thought:
+                    self._record_shared_agent_result("thought", thought)
+                    await self._emit_lifecycle_event(
+                        EventTypes.AGENT_STEP_COMPLETED,
+                        {
+                            "tick": self._tick_count,
+                            "kind": "thought",
+                            "agent": "Planning",
+                        },
+                    )
+                    await self._emit_lifecycle_event(
+                        EventTypes.PIPELINE_COMPLETED,
+                        {
+                            "tick": self._tick_count,
+                            "kind": "thought",
+                            "steps": ["planning"],
+                        },
+                    )
                     for cb in self._reflection_callbacks:
                         try:
                             await cb(thought)
@@ -803,7 +1165,10 @@ class ConsciousnessLoop:
                 "recovery_action": (decision.action.value if decision else None),
             }
 
+        learning_curation = await self._maybe_curate_learning()
+
         self.runtime_state.clamp()
+        self._sync_shared_session_core(source="post_tick")
 
         # Compute and log diff
         state_diff = self.runtime_state.diff(pre_state)
@@ -835,6 +1200,17 @@ class ConsciousnessLoop:
                 else {"type": "disabled"}
             ),
             "learning": self._learning_context_snapshot(limit=0),
+            "learning_curation": learning_curation,
+            "shared_session": (
+                self.shared_session.context(agent="snapshot")
+                if getattr(self.flags, "shared_session_enabled", True)
+                else {"type": "disabled"}
+            ),
+            "task_ledger": (
+                self.task_ledger.context(limit=5)
+                if getattr(self.flags, "task_ledger_enabled", True)
+                else {"type": "disabled", "tasks": []}
+            ),
             # Stage 12/16 — ML regulators payload + recovery_action shortcut
             # (used by ml.dataset.build_dataset_from_event_store)
             "ml": ml_payload,

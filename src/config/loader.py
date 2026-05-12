@@ -26,7 +26,9 @@ from src.config.settings import (
     PersistenceSettings,
     RuntimeDefaults,
     Settings,
+    SharedSessionSettings,
     SleepSettings,
+    TaskLedgerSettings,
     ToolsSettings,
 )
 
@@ -107,6 +109,11 @@ def load_settings(config_dir: Path | None = None) -> Settings:
     )
     goal_stack = _build_dataclass(GoalStackSettings, data.get("goal_stack", {}))
     learning = _build_dataclass(LearningSettings, data.get("learning", {}))
+    shared_session = _build_dataclass(
+        SharedSessionSettings,
+        data.get("shared_session", {}),
+    )
+    task_ledger = _build_dataclass(TaskLedgerSettings, data.get("task_ledger", {}))
 
     return Settings(
         model=model,
@@ -127,6 +134,8 @@ def load_settings(config_dir: Path | None = None) -> Settings:
         ml_regulators=ml_regulators,
         goal_stack=goal_stack,
         learning=learning,
+        shared_session=shared_session,
+        task_ledger=task_ledger,
     )
 
 

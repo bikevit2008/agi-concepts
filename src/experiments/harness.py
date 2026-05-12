@@ -43,7 +43,9 @@ from src.contracts.ml import (
 )
 from src.contracts.observability import NullObservabilityCollector
 from src.contracts.persistence import NullCheckpoint, NullEventStore
+from src.contracts.session import ISharedSessionState
 from src.contracts.sleep import NullMemoryConsolidator, NullSleepManager
+from src.contracts.tasks import ITaskLedger
 from src.core.consciousness_loop import ConsciousnessLoop
 from src.core.hysteresis import HysteresisEngine
 from src.core.runtime_state import RuntimeState
@@ -52,6 +54,8 @@ from src.engine.goal_pursuit import DeterministicGoalPursuitPolicy
 from src.engine.goal_stack import PersistentGoalStack
 from src.engine.homeostatic_hysteresis import HomeostaticHysteresisEngine
 from src.engine.learning_store import PersistentLearningStore
+from src.engine.shared_session import PersistentSharedSessionState
+from src.engine.task_ledger import PersistentTaskLedger
 from src.governance.kernel import DeterministicGovernanceKernel, GovernancePolicy
 
 
@@ -157,6 +161,8 @@ class HarnessResult:
     goal_stack: Dict[str, Any] = field(default_factory=dict)
     goal_pursuit: Dict[str, Any] = field(default_factory=dict)
     learning: Dict[str, Any] = field(default_factory=dict)
+    shared_session: Dict[str, Any] = field(default_factory=dict)
+    task_ledger: Dict[str, Any] = field(default_factory=dict)
 
     def channel_trace(self, channel: str) -> List[float]:
         return self.channel_traces.get(channel, [])
@@ -267,9 +273,20 @@ class LoopHarness:
         )
         learning_store: ILearningStore = PersistentLearningStore(
             session_id=settings.learning.session_id,
+            mode=settings.learning.mode,
             max_recent_events=settings.learning.max_recent_events,
             max_insights=settings.learning.max_insights,
             min_insight_length=settings.learning.min_insight_length,
+            curation_interval_ticks=settings.learning.curation_interval_ticks,
+            stale_after_ticks=settings.learning.stale_after_ticks,
+            stale_confidence_decay=settings.learning.stale_confidence_decay,
+        )
+        shared_session: ISharedSessionState = PersistentSharedSessionState(
+            session_id=settings.shared_session.session_id,
+            max_recent_mutations=settings.shared_session.max_recent_mutations,
+        )
+        task_ledger: ITaskLedger = PersistentTaskLedger(
+            max_tasks=settings.task_ledger.max_tasks,
         )
 
         return ConsciousnessLoop(
@@ -292,6 +309,8 @@ class LoopHarness:
             goal_stack=goal_stack,
             goal_pursuit_policy=goal_pursuit_policy,
             learning_store=learning_store,
+            shared_session=shared_session,
+            task_ledger=task_ledger,
         )
 
     async def run(
@@ -355,6 +374,8 @@ class LoopHarness:
             goal_stack=loop.goal_stack.to_dict(),
             goal_pursuit=loop.goal_pursuit_policy.to_dict(),
             learning=loop.learning_store.to_dict(),
+            shared_session=loop.shared_session.to_dict(),
+            task_ledger=loop.task_ledger.to_dict(),
         )
 
 

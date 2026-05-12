@@ -50,12 +50,14 @@ from src.contracts.persistence import (
     NullCheckpoint,
     NullEventStore,
 )
+from src.contracts.session import ISharedSessionState, NullSharedSessionState
 from src.contracts.sleep import (
     IMemoryConsolidator,
     ISleepManager,
     NullMemoryConsolidator,
     NullSleepManager,
 )
+from src.contracts.tasks import ITaskLedger, NullTaskLedger
 from src.core.consciousness_loop import ConsciousnessLoop
 from src.core.hysteresis import HysteresisEngine
 from src.core.runtime_state import RuntimeState
@@ -68,6 +70,8 @@ from src.engine.goal_pursuit import DeterministicGoalPursuitPolicy
 from src.engine.goal_stack import PersistentGoalStack
 from src.engine.homeostatic_hysteresis import HomeostaticHysteresisEngine
 from src.engine.learning_store import PersistentLearningStore
+from src.engine.shared_session import PersistentSharedSessionState
+from src.engine.task_ledger import PersistentTaskLedger
 from src.engine.llm_memory_consolidator import LlmMemoryConsolidator
 from src.engine.memory_clusterer import (
     DensityFallbackClusterer,
@@ -307,9 +311,28 @@ class ConsciousnessApp(App):
         )
         self.learning_store: ILearningStore = PersistentLearningStore(
             session_id=self.settings.learning.session_id,
+            mode=self.settings.learning.mode,
             max_recent_events=self.settings.learning.max_recent_events,
             max_insights=self.settings.learning.max_insights,
             min_insight_length=self.settings.learning.min_insight_length,
+            curation_interval_ticks=self.settings.learning.curation_interval_ticks,
+            stale_after_ticks=self.settings.learning.stale_after_ticks,
+            stale_confidence_decay=self.settings.learning.stale_confidence_decay,
+        )
+        self.shared_session: ISharedSessionState = (
+            PersistentSharedSessionState(
+                session_id=self.settings.shared_session.session_id,
+                max_recent_mutations=(
+                    self.settings.shared_session.max_recent_mutations
+                ),
+            )
+            if getattr(self.flags, "shared_session_enabled", True)
+            else NullSharedSessionState()
+        )
+        self.task_ledger: ITaskLedger = (
+            PersistentTaskLedger(max_tasks=self.settings.task_ledger.max_tasks)
+            if getattr(self.flags, "task_ledger_enabled", True)
+            else NullTaskLedger()
         )
 
         self.team = ConsciousnessTeam(
@@ -325,6 +348,8 @@ class ConsciousnessApp(App):
             goal_stack=self.goal_stack,
             learning_store=self.learning_store,
             learning_recall_limit=self.settings.learning.recall_limit,
+            shared_session=self.shared_session,
+            task_ledger=self.task_ledger,
         )
         self.consciousness_loop = ConsciousnessLoop(
             settings=self.settings,
@@ -346,6 +371,8 @@ class ConsciousnessApp(App):
             goal_stack=self.goal_stack,
             goal_pursuit_policy=self.goal_pursuit_policy,
             learning_store=self.learning_store,
+            shared_session=self.shared_session,
+            task_ledger=self.task_ledger,
         )
         self._loop_task: asyncio.Task | None = None
         self._monitor_task: asyncio.Task | None = None

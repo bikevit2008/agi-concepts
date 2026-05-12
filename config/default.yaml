@@ -147,7 +147,20 @@ goal_stack:
 # Stage 32 — lightweight self-learning context
 learning:
   session_id: "default"
+  mode: "always"
   max_recent_events: 12
   max_insights: 100
   min_insight_length: 12
   recall_limit: 3
+  curation_interval_ticks: 25
+  stale_after_ticks: 500
+  stale_confidence_decay: 0.05
+
+# Stage 33 — shared session blackboard
+shared_session:
+  session_id: "default"
+  max_recent_mutations: 40
+
+# Stage 34 — deterministic task ledger
+task_ledger:
+  max_tasks: 200

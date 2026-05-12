@@ -208,10 +208,29 @@ class LearningSettings:
     """Stage 32 — lightweight self-learning context."""
 
     session_id: str = "default"
+    mode: str = "always"  # "always" | "propose" | "agentic" | "disabled"
     max_recent_events: int = 12
     max_insights: int = 100
     min_insight_length: int = 12
     recall_limit: int = 3
+    curation_interval_ticks: int = 25
+    stale_after_ticks: int = 500
+    stale_confidence_decay: float = 0.05
+
+
+@dataclass
+class SharedSessionSettings:
+    """Stage 33 — shared session blackboard."""
+
+    session_id: str = "default"
+    max_recent_mutations: int = 40
+
+
+@dataclass
+class TaskLedgerSettings:
+    """Stage 34 — deterministic task ledger."""
+
+    max_tasks: int = 200
 
 
 @dataclass
@@ -245,3 +264,5 @@ class Settings:
     ml_regulators: MLRegulatorsSettings = field(default_factory=MLRegulatorsSettings)
     goal_stack: GoalStackSettings = field(default_factory=GoalStackSettings)
     learning: LearningSettings = field(default_factory=LearningSettings)
+    shared_session: SharedSessionSettings = field(default_factory=SharedSessionSettings)
+    task_ledger: TaskLedgerSettings = field(default_factory=TaskLedgerSettings)

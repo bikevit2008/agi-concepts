@@ -23,6 +23,7 @@ from src.contracts.tools import (
     ToolResult,
 )
 from src.tools.code_executor import CodeExecutorTool
+from src.tools.decorator import _is_async_function, tool
 from src.tools.registry import CapabilityGatedToolRegistry
 from src.tools.web_search import WebSearchTool
 
@@ -156,6 +157,30 @@ def test_null_registry_rejects_everything():
 def test_registry_satisfies_contract():
     reg: IToolRegistry = CapabilityGatedToolRegistry(granted_capabilities=[])
     assert isinstance(reg, IToolRegistry)
+
+
+def test_tool_decorator_wraps_callable_for_registry():
+    @tool(required_capability="tools:add")
+    def add(a: int, b: int) -> int:
+        """Add two numbers."""
+        return a + b
+
+    reg = CapabilityGatedToolRegistry(granted_capabilities=["tools:add"])
+    reg.register(add)
+    result = reg.execute("add", args={"a": 2, "b": 3}, agent="X")
+    assert result.success is True
+    assert result.output == 5
+    assert add.description == "Add two numbers."
+
+
+def test_tool_decorator_detects_async_functions():
+    async def fetch() -> str:
+        return "ok"
+
+    wrapped = tool(name="fetch_data", required_capability="tools:fetch")(fetch)
+    assert _is_async_function(fetch) is True
+    assert wrapped.tool_metadata.is_async is True
+    assert wrapped.name == "fetch_data"
 
 
 # --- WebSearchTool ---------------------------------------------------------

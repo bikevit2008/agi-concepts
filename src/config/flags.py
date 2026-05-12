@@ -54,6 +54,12 @@ class FeatureFlags:
     # Stage 32 — lightweight self-learning context
     self_learning_enabled: bool = True
 
+    # Stage 33 — shared session blackboard
+    shared_session_enabled: bool = True
+
+    # Stage 34 — deterministic task ledger
+    task_ledger_enabled: bool = True
+
     # Stage 4 — persistence
     persistence_enabled: bool = True
 

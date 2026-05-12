@@ -32,6 +32,8 @@ from src.contracts.memory import (
     NullProvenanceTracker,
     ProvenanceVerdict,
 )
+from src.contracts.session import ISharedSessionState, NullSharedSessionState
+from src.contracts.tasks import ITaskLedger, NullTaskLedger
 from src.core.hysteresis import HysteresisEngine
 from src.core.runtime_state import RuntimeState
 from src.engine.homeostatic_hysteresis import HomeostaticHysteresisEngine
@@ -71,6 +73,12 @@ class ConsciousnessTeam:
     # Stage 32 — lightweight self-learning context
     learning_store: ILearningStore = field(default_factory=NullLearningStore)
     learning_recall_limit: int = 3
+
+    # Stage 33 — shared session blackboard
+    shared_session: ISharedSessionState = field(default_factory=NullSharedSessionState)
+
+    # Stage 34 — deterministic task ledger
+    task_ledger: ITaskLedger = field(default_factory=NullTaskLedger)
 
     # Internal state
     memories: List[str] = field(default_factory=list)
@@ -161,6 +169,24 @@ class ConsciousnessTeam:
         except Exception as e:
             logger.warning("learning_context_failed", error=str(e))
             return {"type": "error", "learned_insights": []}
+
+    def _shared_session_context(self, agent: str) -> Dict[str, Any]:
+        if not getattr(self.flags, "shared_session_enabled", True):
+            return {"type": "disabled"}
+        try:
+            return self.shared_session.context(agent=agent)
+        except Exception as e:
+            logger.warning("shared_session_context_failed", agent=agent, error=str(e))
+            return {"type": "error"}
+
+    def _task_context(self, goal_id: Optional[str] = None) -> Dict[str, Any]:
+        if not getattr(self.flags, "task_ledger_enabled", True):
+            return {"type": "disabled", "tasks": []}
+        try:
+            return self.task_ledger.context(goal_id=goal_id, limit=5)
+        except Exception as e:
+            logger.warning("task_context_failed", error=str(e))
+            return {"type": "error", "tasks": []}
 
     def snapshot_memories(self) -> List[str]:
         if self.flags.memory_store_enabled:
@@ -270,6 +296,30 @@ class ConsciousnessTeam:
         except Exception as e:
             logger.warning("goal_progress_failed", error=str(e), status=status)
 
+    def _capture_planning_tasks(
+        self,
+        planning: PlanningResult,
+        goal_id: Optional[str],
+    ) -> None:
+        if not getattr(self.flags, "task_ledger_enabled", True):
+            return
+        actions = planning.next_actions or []
+        if not isinstance(actions, list):
+            return
+        try:
+            for action in actions[:6]:
+                title = str(action).strip()
+                if not title:
+                    continue
+                self.task_ledger.create(
+                    title=title,
+                    tick=self.current_tick,
+                    goal_id=goal_id,
+                    source="planning.next_actions",
+                )
+        except Exception as e:
+            logger.warning("task_capture_failed", error=str(e))
+
     def _update_agent_states(self) -> None:
         """Push current runtime state into agent session_states."""
         rt = self.runtime_state
@@ -315,7 +365,14 @@ class ConsciousnessTeam:
             "active_channels": active,
             "goal_stack": goal_context,
             "current_goal": top_goal,
+            "task_ledger": self._task_context(
+                top_goal.get("id") if top_goal else None
+            ),
+            "task_ledger": self._task_context(
+                top_goal.get("id") if top_goal else None
+            ),
             "learning_context": self._learning_context(),
+            "shared_session": self._shared_session_context("Planning"),
         }
 
     def process_stimulus_sync(self, stimulus: str) -> Dict[str, Any]:
@@ -495,7 +552,11 @@ class ConsciousnessTeam:
                     "active_channels": self.hysteresis.get_active_channels(),
                     "goal_stack": self._goal_context(),
                     "current_goal": active_goal,
+                    "task_ledger": self._task_context(
+                        active_goal.get("id") if active_goal else None
+                    ),
                     "learning_context": learning_context,
+                    "shared_session": self._shared_session_context("Planning"),
                 })
                 self._planning_agent.model.temperature = self.runtime_state.temperature
                 # max_tokens driven by vitality (energy + bandwidth)
@@ -510,6 +571,10 @@ class ConsciousnessTeam:
                     planning_data = _parse_structured(resp.content, PlanningResult)
                     if planning_data:
                         self._apply_goal_progress(planning_data)
+                        self._capture_planning_tasks(
+                            planning_data,
+                            active_goal.get("id") if active_goal else None,
+                        )
                         result["planning"] = planning_data.model_dump()
                         result["response"] = planning_data.response
                     else:
@@ -560,6 +625,7 @@ class ConsciousnessTeam:
             "goal_stack": goal_context,
             "current_goal": top_goal,
             "learning_context": self._learning_context(learning_query),
+            "shared_session": self._shared_session_context("Reflection"),
         }
 
         self._reflection_agent.model.temperature = min(2.0, rt.temperature + 0.2)
@@ -632,7 +698,11 @@ class ConsciousnessTeam:
             "active_channels": active,
             "goal_stack": self._goal_context(),
             "current_goal": top_goal,
+            "task_ledger": self._task_context(
+                top_goal.get("id") if top_goal else None
+            ),
             "learning_context": self._learning_context(learning_query),
+            "shared_session": self._shared_session_context("Planning"),
         })
 
         self._planning_agent.model.temperature = min(2.0, rt.temperature + 0.3)

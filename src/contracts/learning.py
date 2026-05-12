@@ -8,6 +8,7 @@ existing memory/provenance/goal architecture.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from enum import Enum
 from typing import Any, Dict, List, Optional, Protocol, runtime_checkable
 
 
@@ -27,6 +28,24 @@ def _float_or_default(value: Any, default: float = 0.0) -> float:
         return float(value)
     except (TypeError, ValueError):
         return default
+
+
+class LearningMode(str, Enum):
+    """Controls how durable insights are accepted into the learning store."""
+
+    ALWAYS = "always"
+    PROPOSE = "propose"
+    AGENTIC = "agentic"
+    DISABLED = "disabled"
+
+    @classmethod
+    def normalize(cls, value: Any) -> "LearningMode":
+        if isinstance(value, cls):
+            return value
+        try:
+            return cls(str(value or cls.ALWAYS.value).lower())
+        except ValueError:
+            return cls.ALWAYS
 
 
 @dataclass
@@ -163,6 +182,26 @@ class ILearningStore(Protocol):
         """Return compact prompt context."""
         ...
 
+    def proposals(self, limit: int = 10) -> List[LearnedInsight]:
+        """Return pending proposed insights awaiting approval."""
+        ...
+
+    def approve_proposal(
+        self,
+        proposal_id: str,
+        tick: int = 0,
+    ) -> Optional[LearnedInsight]:
+        """Promote a proposed insight into durable learned insights."""
+        ...
+
+    def reject_proposal(self, proposal_id: str) -> bool:
+        """Discard a pending proposed insight."""
+        ...
+
+    def curate(self, tick: int = 0) -> Dict[str, Any]:
+        """Run deterministic maintenance and return curation stats."""
+        ...
+
     def to_dict(self) -> Dict[str, Any]:
         """Serialize for checkpointing."""
         ...
@@ -197,17 +236,47 @@ class NullLearningStore:
     def context(self, query: str = "", limit: int = 3) -> Dict[str, Any]:
         return {
             "type": "null",
+            "mode": LearningMode.DISABLED.value,
             "session_context": SessionContext().to_dict(),
             "learned_insights": [],
             "insight_count": 0,
+            "proposed_insights": [],
+            "proposal_count": 0,
+        }
+
+    def proposals(self, limit: int = 10) -> List[LearnedInsight]:
+        return []
+
+    def approve_proposal(
+        self,
+        proposal_id: str,
+        tick: int = 0,
+    ) -> Optional[LearnedInsight]:
+        return None
+
+    def reject_proposal(self, proposal_id: str) -> bool:
+        return False
+
+    def curate(self, tick: int = 0) -> Dict[str, Any]:
+        return {
+            "type": "null",
+            "mode": LearningMode.DISABLED.value,
+            "before": 0,
+            "after": 0,
+            "removed": 0,
+            "merged": 0,
+            "decayed": 0,
         }
 
     def to_dict(self) -> Dict[str, Any]:
         return {
             "type": "null",
+            "mode": LearningMode.DISABLED.value,
             "session_context": SessionContext().to_dict(),
             "learned_insights": [],
             "insight_count": 0,
+            "proposed_insights": [],
+            "proposal_count": 0,
         }
 
     def restore(self, data: Any) -> None:
@@ -217,6 +286,7 @@ class NullLearningStore:
 __all__ = [
     "ILearningStore",
     "LearnedInsight",
+    "LearningMode",
     "NullLearningStore",
     "SessionContext",
 ]

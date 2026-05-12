@@ -26,7 +26,9 @@ Recent emotion history: {emotion_history}
 State journal (recent snapshots): {state_journal}
 Persistent goal stack: {goal_stack}
 Current top goal: {current_goal}
+Task ledger: {task_ledger}
 Learning context: {learning_context}
+Shared session context: {shared_session}
 
 Rules:
 1. Reflect on your current state — how do you "feel"? What patterns do you notice?
@@ -78,7 +80,9 @@ def create_reflection_agent(model_settings: ModelSettings) -> Agent:
             "state_journal": [],
             "goal_stack": [],
             "current_goal": None,
+            "task_ledger": {},
             "learning_context": {},
+            "shared_session": {},
         },
         markdown=False,
     )

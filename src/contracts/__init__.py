@@ -23,6 +23,12 @@ from src.contracts.cost import (
     NullCostTracker,
     TokenUsage,
 )
+from src.contracts.context import (
+    ContextAnswer,
+    ContextDocument,
+    IContextProvider,
+    NullContextProvider,
+)
 from src.contracts.governance import (
     AuditResult,
     ConstitutionalViolation,
@@ -49,6 +55,7 @@ from src.contracts.goals import (
 from src.contracts.learning import (
     ILearningStore,
     LearnedInsight,
+    LearningMode,
     NullLearningStore,
     SessionContext,
 )
@@ -88,6 +95,11 @@ from src.contracts.persistence import (
     NullEventStore,
     Snapshot,
 )
+from src.contracts.session import (
+    ISharedSessionState,
+    NullSharedSessionState,
+    SessionMutation,
+)
 from src.contracts.sleep import (
     IMemoryConsolidator,
     ISleepManager,
@@ -96,6 +108,7 @@ from src.contracts.sleep import (
     SleepPhase,
     WakeState,
 )
+from src.contracts.tasks import ITaskLedger, NullTaskLedger, Task, TaskStatus
 from src.contracts.tools import (
     IToolRegistry,
     ITool,
@@ -115,6 +128,11 @@ __all__ = [
     "IModelInvoker",
     "NullCostTracker",
     "TokenUsage",
+    # Context
+    "ContextAnswer",
+    "ContextDocument",
+    "IContextProvider",
+    "NullContextProvider",
     # Governance
     "AuditResult",
     "ConstitutionalViolation",
@@ -139,6 +157,7 @@ __all__ = [
     # Learning
     "ILearningStore",
     "LearnedInsight",
+    "LearningMode",
     "NullLearningStore",
     "SessionContext",
     # ML
@@ -173,6 +192,10 @@ __all__ = [
     "NullCheckpoint",
     "NullEventStore",
     "Snapshot",
+    # Session
+    "ISharedSessionState",
+    "NullSharedSessionState",
+    "SessionMutation",
     # Sleep
     "IMemoryConsolidator",
     "ISleepManager",
@@ -180,6 +203,11 @@ __all__ = [
     "NullSleepManager",
     "SleepPhase",
     "WakeState",
+    # Tasks
+    "ITaskLedger",
+    "NullTaskLedger",
+    "Task",
+    "TaskStatus",
     # Tools
     "IToolRegistry",
     "ITool",

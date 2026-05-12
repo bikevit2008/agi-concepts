@@ -82,6 +82,106 @@ def test_learning_store_records_deduplicates_recalls_and_restores() -> None:
     assert restored_context["learned_insights"][0]["learning"] == insight.learning
 
 
+def test_learning_propose_mode_requires_approval() -> None:
+    store = PersistentLearningStore(mode="propose")
+
+    saved = store.record_reflection(
+        tick=2,
+        reflection={
+            "thought": "Repeated stalls improved after adding a tiny check.",
+            "insight": "When progress stalls, first add a tiny deterministic check.",
+        },
+    )
+
+    assert saved is None
+    proposal = store.proposals(limit=1)[0]
+    assert store.to_dict()["insight_count"] == 0
+    assert store.context()["proposal_count"] == 1
+
+    approved = store.approve_proposal(proposal.id, tick=3)
+
+    assert approved is not None
+    assert approved.learning == proposal.learning
+    assert approved.source == "approved_proposal"
+    assert store.to_dict()["insight_count"] == 1
+    assert store.to_dict()["proposal_count"] == 0
+
+
+def test_learning_agentic_mode_saves_only_when_requested() -> None:
+    store = PersistentLearningStore(mode="agentic")
+    reflection = {
+        "thought": "Useful but not explicitly saved yet.",
+        "insight": "Agentic learning should wait for an explicit save request.",
+    }
+
+    assert store.record_reflection(tick=1, reflection=reflection) is None
+    assert store.to_dict()["insight_count"] == 0
+    assert store.to_dict()["proposal_count"] == 1
+
+    saved = store.record_reflection(
+        tick=2,
+        reflection={**reflection, "save_learning": True},
+    )
+
+    assert saved is not None
+    assert saved.learning == reflection["insight"]
+    assert store.to_dict()["insight_count"] == 1
+    assert store.to_dict()["proposal_count"] == 0
+
+
+def test_learning_curator_merges_decays_and_prunes_stale_insights() -> None:
+    store = PersistentLearningStore(
+        stale_after_ticks=5,
+        stale_confidence_decay=0.5,
+    )
+    store.restore(
+        {
+            "config": {
+                "stale_after_ticks": 5,
+                "stale_confidence_decay": 0.5,
+            },
+            "learned_insights": [
+                {
+                    "id": "a",
+                    "title": "Break stalled plans",
+                    "learning": "When progress stalls, break plans into tiny checks.",
+                    "created_tick": 1,
+                    "last_used_tick": 1,
+                    "confidence": 0.9,
+                    "tags": ["plans"],
+                },
+                {
+                    "id": "b",
+                    "title": "Duplicate",
+                    "learning": "When progress stalls break plans into tiny checks",
+                    "created_tick": 2,
+                    "last_used_tick": 2,
+                    "confidence": 0.4,
+                    "tags": ["checks"],
+                },
+                {
+                    "id": "c",
+                    "title": "Weak stale insight",
+                    "learning": "A weak stale insight should be pruned.",
+                    "created_tick": 1,
+                    "last_used_tick": 1,
+                    "confidence": 0.1,
+                },
+            ],
+        }
+    )
+
+    stats = store.curate(tick=10)
+    learned = store.to_dict()["learned_insights"]
+
+    assert stats["merged"] == 1
+    assert stats["decayed"] == 2
+    assert stats["stale_pruned"] == 1
+    assert stats["after"] == 1
+    assert learned[0]["id"] == "a"
+    assert "b" in learned[0]["metadata"]["merged_ids"]
+
+
 def test_null_learning_store_noops() -> None:
     store = NullLearningStore()
 
@@ -91,6 +191,7 @@ def test_null_learning_store_noops() -> None:
     assert store.record_reflection(1, {"insight": "important"}) is None
     assert store.recall("important") == []
     assert store.context()["type"] == "null"
+    assert store.curate()["type"] == "null"
     assert store.to_dict()["insight_count"] == 0
 
 
@@ -150,6 +251,21 @@ def test_loop_state_snapshot_exposes_compact_learning_context() -> None:
     assert learning["type"] == "persistent"
     assert learning["session_context"]["interaction_count"] == 1
     assert learning["learned_insights"] == []
+
+
+def test_loop_runs_learning_curation_on_configured_interval() -> None:
+    harness = LoopHarness(
+        settings_overrides={"learning.curation_interval_ticks": 1},
+    )
+    loop = harness.build()
+
+    asyncio.run(loop._tick())
+
+    curation_events = loop.event_bus.history(EventTypes.LEARNING_CURATED)
+    snapshots = loop.event_bus.history(EventTypes.STATE_SNAPSHOT)
+    assert curation_events
+    assert curation_events[-1].payload["tick"] == 1
+    assert snapshots[-1].payload["learning_curation"]["tick"] == 1
 
 
 def test_checkpoint_restore_preserves_learning_store(tmp_path: Path) -> None:
