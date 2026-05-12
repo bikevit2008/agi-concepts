@@ -24,7 +24,6 @@ from typing import List, Tuple
 import structlog
 
 from src.contracts.memory import (
-    IProvenanceTracker,
     MemoryEntry,
     ProvenanceVerdict,
 )

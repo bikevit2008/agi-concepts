@@ -13,7 +13,6 @@ from src.persistence.cost_aware_agent import (
 from src.persistence.cost_tracker import (
     DEFAULT_MODEL_RATES,
     InMemoryCostTracker,
-    ModelRate,
     UNKNOWN_MODEL_RATE,
 )
 

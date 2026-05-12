@@ -23,12 +23,12 @@ collect explicit reward labels.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import structlog
 
 from src.contracts.ml import RecoveryAction
-from src.contracts.persistence import EventRecord, IEventStore
+from src.contracts.persistence import IEventStore
 
 logger = structlog.get_logger("consciousness.ml.dataset")
 

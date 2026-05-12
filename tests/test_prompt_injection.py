@@ -8,7 +8,6 @@ import pytest
 
 from src.governance.prompt_injection import (
     InjectionClassifier,
-    InjectionVerdict,
     check_tool_args_injection_risk,
     datamark,
     spotlight,

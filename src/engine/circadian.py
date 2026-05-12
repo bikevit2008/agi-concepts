@@ -29,7 +29,6 @@ from typing import Dict, Optional
 import structlog
 
 from src.contracts.sleep import (
-    ISleepManager,
     SleepDecision,
     SleepPhase,
     WakeState,

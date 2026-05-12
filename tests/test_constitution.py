@@ -5,8 +5,6 @@ from pathlib import Path
 import pytest
 
 from src.contracts.governance import (
-    AuditResult,
-    ConstitutionalViolation,
     GovernanceDecision,
     IConstitutionalAuditor,
     NullConstitutionalAuditor,

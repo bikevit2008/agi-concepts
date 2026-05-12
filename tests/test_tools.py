@@ -11,12 +11,9 @@ Cover:
 
 import json
 from pathlib import Path
-from typing import Any
 
-import pytest
 
 from src.contracts.tools import (
-    ITool,
     IToolRegistry,
     NullToolRegistry,
     ToolCall,

@@ -40,7 +40,6 @@ from src.contracts.ml import (
 )
 from src.ml.dataset import (
     ACTION_ORDER,
-    ACTION_TO_INDEX,
     FEATURE_KEYS,
     INDEX_TO_ACTION,
     RecoveryDataset,

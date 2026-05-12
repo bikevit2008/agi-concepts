@@ -2,11 +2,9 @@
 
 from __future__ import annotations
 
-import math
 from types import SimpleNamespace
 from unittest.mock import MagicMock
 
-import pytest
 
 from src.contracts.governance import (
     AuditResult,
@@ -16,7 +14,7 @@ from src.contracts.governance import (
     RiskTier,
     ConstitutionalViolation,
 )
-from src.contracts.memory import IMemoryStore, MemoryEntry
+from src.contracts.memory import MemoryEntry
 from src.engine.llm_memory_consolidator import (
     LlmMemoryConsolidator,
     _build_reflection_prompt,
@@ -79,7 +77,6 @@ def test_nrem_strengthens_paired_memories_and_bumps_importance():
     store = _make_store_with(entries)
     cons = LlmMemoryConsolidator(memory_store=store)
 
-    pre = [e.confidence for e in store.all_entries()]
     stats = cons.consolidate_nrem([])
 
     assert stats["consolidated"] == 1  # one shared-emotion pair

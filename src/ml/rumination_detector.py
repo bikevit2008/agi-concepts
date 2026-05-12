@@ -17,7 +17,7 @@ from __future__ import annotations
 from collections import Counter, deque
 from dataclasses import dataclass, field
 from math import log
-from typing import Any, Deque, Dict, Optional
+from typing import Any, Deque, Dict
 
 import structlog
 

@@ -9,7 +9,6 @@ Verify:
 
 from unittest.mock import MagicMock, patch
 
-import pytest
 
 from src.config.flags import FeatureFlags
 from src.config.settings import ModelSettings

@@ -6,11 +6,8 @@ circuit breaker observes channel state every tick.
 """
 
 import asyncio
-from dataclasses import dataclass
-from typing import Any, Dict
 from unittest.mock import MagicMock
 
-import pytest
 
 from src.config.flags import FeatureFlags
 from src.config.settings import Settings

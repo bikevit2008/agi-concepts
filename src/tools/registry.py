@@ -33,7 +33,7 @@ from typing import Any, Dict, List, Optional
 
 import structlog
 
-from src.contracts.tools import ITool, IToolRegistry, ToolCall, ToolResult
+from src.contracts.tools import ITool, ToolCall, ToolResult
 
 logger = structlog.get_logger("consciousness.tools.registry")
 

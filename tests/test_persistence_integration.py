@@ -15,7 +15,6 @@ import sqlite3
 from pathlib import Path
 from unittest.mock import MagicMock
 
-import pytest
 
 from src.config.flags import FeatureFlags
 from src.config.settings import Settings

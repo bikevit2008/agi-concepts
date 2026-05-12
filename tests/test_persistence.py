@@ -16,7 +16,6 @@ import json
 import sqlite3
 from pathlib import Path
 
-import pytest
 
 from src.contracts.persistence import (
     ICheckpoint,
@@ -109,7 +108,7 @@ def test_event_store_handles_unserializable_payload(tmp_path: Path):
         pass
 
     store = SqliteEventStore(str(tmp_path / "events.db"))
-    seq = store.append(0, "weird", {"obj": Weird()})
+    store.append(0, "weird", {"obj": Weird()})
     # default=str fallback should serialize as repr
     events = list(store.replay())
     assert len(events) == 1

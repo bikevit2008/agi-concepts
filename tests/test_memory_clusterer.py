@@ -9,7 +9,6 @@ from src.engine.memory_clusterer import (
     DensityFallbackClusterer,
     HdbscanClusterer,
     IMemoryClusterer,
-    MemoryCluster,
 )
 
 

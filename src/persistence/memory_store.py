@@ -34,7 +34,6 @@ from typing import Any, Dict, List, Optional
 import structlog
 
 from src.contracts.memory import (
-    IMemoryStore,
     MemoryEntry,
     ProvenanceVerdict,
     RecalledMemory,

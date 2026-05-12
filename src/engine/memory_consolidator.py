@@ -22,7 +22,6 @@ from typing import Any, Dict, List
 import structlog
 
 from src.contracts.memory import IMemoryStore, MemoryEntry
-from src.contracts.sleep import IMemoryConsolidator
 
 logger = structlog.get_logger("consciousness.engine.memory_consolidator")
 

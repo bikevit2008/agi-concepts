@@ -18,13 +18,13 @@ under-bill ourselves into a runaway scenario.
 from __future__ import annotations
 
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from threading import Lock
 from typing import Any, Dict, Optional
 
 import structlog
 
-from src.contracts.cost import ICostTracker, TokenUsage
+from src.contracts.cost import TokenUsage
 
 logger = structlog.get_logger("consciousness.persistence.cost")
 

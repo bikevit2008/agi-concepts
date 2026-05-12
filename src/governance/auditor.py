@@ -28,7 +28,7 @@ from src.contracts.governance import (
     StimulationRequest,
 )
 from src.governance.checks import CHECK_REGISTRY, CheckFn
-from src.governance.constitution import Constitution, ConstitutionPolicy
+from src.governance.constitution import Constitution
 
 logger = structlog.get_logger("consciousness.governance.auditor")
 

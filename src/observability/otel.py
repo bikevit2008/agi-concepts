@@ -25,16 +25,12 @@ Usage:
 
 from __future__ import annotations
 
-from contextlib import contextmanager
-from typing import Any, Dict, Iterator, Optional
+from typing import Any, Dict, Optional
 
 import structlog
 
 from src.contracts.observability import (
-    IObservabilityCollector,
     ISpan,
-    NullObservabilityCollector,
-    NullSpan,
 )
 
 logger = structlog.get_logger("consciousness.observability")

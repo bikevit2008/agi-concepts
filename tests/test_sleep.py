@@ -3,9 +3,8 @@
 import asyncio
 from unittest.mock import MagicMock
 
-import pytest
 
-from src.contracts.memory import IMemoryStore, MemoryEntry
+from src.contracts.memory import MemoryEntry
 from src.contracts.sleep import (
     IMemoryConsolidator,
     ISleepManager,
@@ -122,7 +121,6 @@ def test_consolidate_nrem_strengthens_paired_memories():
         ]
     )
     c = HebbianMemoryConsolidator(memory_store=store, nrem_strengthen_factor=2.0)
-    pre = [e.confidence for e in store.all_entries()]
     stats = c.consolidate_nrem(memory_ids=[])
     assert stats["consolidated"] == 1  # one pair strengthened
     post = [e.confidence for e in store.all_entries()]

@@ -13,7 +13,6 @@ Lazy-imports nats so the rest of the codebase works without it.
 
 from __future__ import annotations
 
-import asyncio
 import json
 import time
 from collections import deque
@@ -23,7 +22,7 @@ from typing import Any, Dict, Iterable, List, Optional
 import structlog
 
 from src.bus.event_types import schema_for
-from src.contracts.bus import EventEnvelope, EventHandler, IEventBus
+from src.contracts.bus import EventEnvelope, EventHandler
 
 logger = structlog.get_logger("consciousness.bus.nats")
 

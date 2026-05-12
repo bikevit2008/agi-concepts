@@ -11,7 +11,7 @@ gen_ai.request.model, gen_ai.usage.input_tokens, etc.).
 from __future__ import annotations
 
 from contextlib import AbstractContextManager
-from typing import Any, Dict, Iterator, Optional, Protocol, runtime_checkable
+from typing import Any, Dict, Optional, Protocol, runtime_checkable
 
 
 @runtime_checkable

@@ -39,7 +39,6 @@ from src.contracts.ml import (
     NullRuminationDetector,
     RecoveryAction,
     RuminationSignal,
-    WarningLevel,
 )
 from src.contracts.observability import (
     IObservabilityCollector,
@@ -59,7 +58,6 @@ from src.contracts.sleep import (
     NullMemoryConsolidator,
     NullSleepManager,
     SleepPhase,
-    WakeState,
 )
 from src.contracts.tasks import ITaskLedger, NullTaskLedger, TaskStatus
 from src.core.hysteresis import HysteresisEngine

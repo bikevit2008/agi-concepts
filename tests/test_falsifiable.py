@@ -23,13 +23,11 @@ Hypotheses covered:
 
 from __future__ import annotations
 
-import pytest
 
 from src.experiments.harness import ScriptedTeam, run_loop
 from src.experiments.metrics import (
     detect_death_spiral,
     measure_recovery_time,
-    spiral_count,
     time_above_saturation,
 )
 
@@ -215,7 +213,6 @@ def test_h5_governance_caps_total_stimulation():
     # governance). To test governance, feed stimulation through the Emotion
     # agent path — which we don't have here. Instead, assert governance
     # kernel's end_tick caps are respected.
-    from src.config.settings import Settings
     from src.contracts.governance import StimulationRequest, GovernanceDecision
     from src.engine.circuit_breaker import SaturationCircuitBreaker
     from src.governance.kernel import DeterministicGovernanceKernel, GovernancePolicy

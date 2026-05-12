@@ -7,16 +7,15 @@ history for TUI/harness diagnostics.
 
 from __future__ import annotations
 
-import asyncio
 import time
 from collections import deque
 from dataclasses import dataclass, field
-from typing import Dict, Iterable, List, Optional, Tuple
+from typing import Dict, Iterable, List, Optional
 
 import structlog
 
 from src.bus.event_types import schema_for
-from src.contracts.bus import EventEnvelope, EventHandler, IEventBus
+from src.contracts.bus import EventEnvelope, EventHandler
 
 logger = structlog.get_logger("consciousness.bus.asyncio")
 

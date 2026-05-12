@@ -4,7 +4,6 @@ import asyncio
 import random
 from unittest.mock import MagicMock
 
-import pytest
 
 from src.contracts.ml import (
     CollapseSignal,

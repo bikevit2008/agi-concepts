@@ -1,8 +1,7 @@
 """Tests for the experiment harness (Stage 13 — infrastructure)."""
 
-import asyncio
 
-from src.experiments.harness import LoopHarness, ScriptedTeam, run_loop
+from src.experiments.harness import ScriptedTeam, run_loop
 from src.experiments.metrics import (
     detect_death_spiral,
     measure_recovery_time,

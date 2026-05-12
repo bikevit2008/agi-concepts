@@ -34,13 +34,12 @@ import json
 import sqlite3
 import threading
 import time
-from dataclasses import asdict
 from pathlib import Path
-from typing import Any, Dict, Iterable, Iterator, Optional
+from typing import Any, Dict, Iterator, Optional
 
 import structlog
 
-from src.contracts.persistence import EventRecord, IEventStore
+from src.contracts.persistence import EventRecord
 
 logger = structlog.get_logger("consciousness.persistence.event_store")
 

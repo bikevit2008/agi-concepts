@@ -36,7 +36,7 @@ from typing import Optional
 
 import structlog
 
-from src.contracts.persistence import ICheckpoint, Snapshot
+from src.contracts.persistence import Snapshot
 
 logger = structlog.get_logger("consciousness.persistence.checkpoint")
 

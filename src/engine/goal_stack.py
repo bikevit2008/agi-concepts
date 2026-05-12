@@ -12,7 +12,7 @@ import hashlib
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
-from src.contracts.goals import Goal, GoalStatus, IGoalStack
+from src.contracts.goals import Goal, GoalStatus
 
 
 def _normalize_description(description: str) -> str:

@@ -10,13 +10,12 @@ Search) that supports rate-limited keys + DPoP-bound tokens.
 
 from __future__ import annotations
 
-import json
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
 import structlog
 
-from src.contracts.tools import ITool, ToolCall, ToolResult
+from src.contracts.tools import ToolCall, ToolResult
 
 logger = structlog.get_logger("consciousness.tools.web_search")
 

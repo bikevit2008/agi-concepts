@@ -10,9 +10,9 @@ import asyncio
 import inspect
 from dataclasses import dataclass
 from functools import wraps
-from typing import Any, Callable, Dict, Optional, TypeVar, overload
+from typing import Any, Callable, Optional, TypeVar, overload
 
-from src.contracts.tools import ITool, ToolCall, ToolResult
+from src.contracts.tools import ToolCall, ToolResult
 
 F = TypeVar("F", bound=Callable[..., Any])
 

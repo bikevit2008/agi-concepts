@@ -41,7 +41,6 @@ LLM consolidation by setting `flags.llm_rem_enabled = false`.
 
 from __future__ import annotations
 
-import json
 import time
 from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Optional
@@ -60,7 +59,6 @@ from src.contracts.memory import (
     MemoryEntry,
     NullProvenanceTracker,
 )
-from src.contracts.sleep import IMemoryConsolidator
 from src.engine.memory_clusterer import (
     DensityFallbackClusterer,
     IMemoryClusterer,

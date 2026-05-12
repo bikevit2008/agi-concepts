@@ -5,7 +5,7 @@ from dataclasses import fields
 from textual.app import ComposeResult
 from textual.containers import VerticalScroll
 from textual.screen import ModalScreen
-from textual.widgets import Checkbox, Footer, Header, Static
+from textual.widgets import Checkbox, Footer, Static
 
 from src.config.flags import FeatureFlags
 

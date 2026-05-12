@@ -20,13 +20,11 @@ import os
 import shutil
 import subprocess
 import tempfile
-from dataclasses import dataclass, field
-from pathlib import Path
-from typing import Any, Dict, List, Optional
+from dataclasses import dataclass
 
 import structlog
 
-from src.contracts.tools import ITool, ToolCall, ToolResult
+from src.contracts.tools import ToolCall, ToolResult
 
 logger = structlog.get_logger("consciousness.tools.code_executor")
 

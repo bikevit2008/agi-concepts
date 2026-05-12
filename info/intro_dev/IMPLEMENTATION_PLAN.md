@@ -199,27 +199,27 @@
 
 ## Текущий статус
 
-| Этап | Статус | Коммит | Дата |
-|------|--------|--------|------|
-| 0 | ✅ done | b0445b2 | 2026-05-09 |
-| 1 | ✅ done | 9fed620 | 2026-05-09 |
-| 2 | ✅ done | 58dedb2 | 2026-05-09 |
-| 3 | ✅ done | f220dce | 2026-05-09 |
-| 4 | ✅ done | 5d76b2f | 2026-05-09 |
-| 5 | ✅ done | 80f4551 | 2026-05-09 |
-| 6 | ✅ done | 719da01 | 2026-05-09 |
-| 7 | ✅ done | 8cb05c9 | 2026-05-09 |
-| 8 | ✅ done | fac3631 | 2026-05-09 |
-| 9 | ✅ done | (prev) | 2026-05-09 |
-| 10 | ✅ done | e77d087 | 2026-05-09 |
-| 11 | ✅ done | (prev) | 2026-05-09 | Constitutional Governance Kernel (YAML + 7 policies) |
-| 12 | ✅ done | (prev) | 2026-05-09 | ML Regulators (Shannon entropy + CSD + rule-based recovery) |
-| 13 | ✅ done | (prev) | 2026-05-09 | Experiment harness + E2E / falsifiable / ablation tests |
-| 14 | ✅ done | (prev) | 2026-05-09 | Production observability bundle (Tempo + Prometheus + Grafana) |
-| 15 | ✅ done | (prev) | 2026-05-09 | LLM-driven REM abstractions (HDBSCAN + Generative-Agents reflection + provenance + constitution gate) |
-| 16 | ✅ done | (prev) | 2026-05-09 | NATS JetStream testcontainers + Offline-RL Behavior-Cloning recovery policy + dataset builder |
-| 17 | ✅ done | (prev) | 2026-05-09 | Prompt-injection v2 (spotlighting + datamarking + classifier + new constitutional policy) + Grafana alerts |
-| 18 | ✅ done | (this) | 2026-05-10 | Self-skill `.devin/skills/agi-mvp/` — институциональная память для будущих итераций |
+| Этап | Статус | Коммит | Дата | Описание |
+|------|--------|--------|------|-----------|
+| 0 | ✅ done | b0445b2 | 2026-05-09 | Infrastructure setup: deps + directory structure |
+| 1 | ✅ done | 9fed620 | 2026-05-09 | Four critical V3 bug fixes |
+| 2 | ✅ done | 58dedb2 | 2026-05-09 | Homeostatic hysteresis engine |
+| 3 | ✅ done | f220dce | 2026-05-09 | Circuit breaker + governance kernel + contracts layer |
+| 4 | ✅ done | 5d76b2f | 2026-05-09 | SQLite WAL persistence + checkpoint/restore |
+| 5 | ✅ done | 80f4551 | 2026-05-09 | Vector memory + provenance tracking |
+| 6 | ✅ done | 719da01 | 2026-05-09 | Cost tracking + model fallback + `--headless` |
+| 7 | ✅ done | 8cb05c9 | 2026-05-09 | OpenTelemetry tracing + Rerun visualization |
+| 8 | ✅ done | fac3631 | 2026-05-09 | NATS JetStream typed event bus + Asyncio bus contract |
+| 9 | ✅ done | cc44ad0 | 2026-05-09 | Sleep mode (Two-Process Model) + memory consolidation |
+| 10 | ✅ done | e77d087 | 2026-05-09 | Capability-gated tool registry + web search + sandboxed code |
+| 11 | ✅ done | b847c97 | 2026-05-09 | Constitutional Governance Kernel (YAML + 7 policies) |
+| 12 | ✅ done | cfc8b00 | 2026-05-09 | ML Regulators (Shannon entropy + CSD + rule-based recovery) |
+| 13 | ✅ done | 8bf66cf | 2026-05-09 | Experiment harness + E2E / falsifiable / ablation tests |
+| 14 | ✅ done | 5298310 | 2026-05-09 | Production observability bundle (Tempo + Prometheus + Grafana) |
+| 15 | ✅ done | 179e137 | 2026-05-09 | LLM-driven REM abstractions (HDBSCAN + Generative-Agents reflection + provenance + constitution gate) |
+| 16 | ✅ done | b74ef92 | 2026-05-09 | NATS JetStream testcontainers + Offline-RL Behavior-Cloning recovery policy + dataset builder |
+| 17 | ✅ done | d087f1d | 2026-05-09 | Prompt-injection v2 (spotlighting + datamarking + classifier + new constitutional policy) + Grafana alerts |
+| 18 | ✅ done | e1978c9 | 2026-05-10 | Self-skill `.devin/skills/agi-mvp/` — институциональная память для будущих итераций |
 | 19 | ✅ done | 94b422a | 2026-05-10 | Concept docs moved from root to `info/intro_dev/` |
 | 20 | ✅ done | 139d31a | 2026-05-10 | Agno pinned to local/release-compatible `v2.6.5` baseline |
 | 21 | ✅ done | f985170 | 2026-05-10 | Contracts normalized: `IMemoryStore.all_entries()`, deps, Agno `FallbackConfig` |
@@ -230,6 +230,18 @@
 | 26 | ✅ done | 9cc2757 | 2026-05-10 | Architecture cleanup: single fallback builder + `model_fallback_enabled` honored |
 | 27 | ✅ done | 3ced35d | 2026-05-10 | Persistence hardening: checkpoint prune off-by-one, corrupt snapshot fallback, restart sequence tests |
 | 28 | ✅ done | c9742b4 | 2026-05-10 | Research harness: deterministic dt + long-run stability runner |
+| 29 | ✅ done | bb2e72e | 2026-05-11 | Persistent intentions / goal stack |
+| 30 | ✅ done | 26629d5 | 2026-05-11 | Active goal pursuit policy and internal stimuli |
+| 31 | ✅ done | d4b0cb0 / 8b877f1 | 2026-05-11 | Event bus contract migration and legacy bus removal |
+| 32 | ✅ done | 7a9e29e | 2026-05-11 | Agno-inspired lightweight self-learning context |
+| 33 | ✅ done | bd9bc15 | 2026-05-12 | Shared session blackboard |
+| 34 | ✅ done | bd9bc15 | 2026-05-12 | Deterministic task ledger for goal pursuit |
+| 35 | ✅ done | bd9bc15 | 2026-05-12 | Consciousness workflow / lifecycle event taxonomy |
+| 36 | ✅ done | bd9bc15 | 2026-05-12 | Guarded tool decorator metadata |
+| 37 | ✅ done | bd9bc15 | 2026-05-12 | Context provider contract and deterministic local providers |
+| 38 | ✅ done | bd9bc15 | 2026-05-12 | Learning modes (`always`, `propose`, `agentic`) + deterministic curation |
+| 39 | ✅ done | 2fbd67f | 2026-05-12 | Context provider injection into planning/reflection with provenance |
+| 40 | ✅ done | 2fbd67f | 2026-05-12 | Learning proposal approval/rejection workflow |
 
 ## Архитектурный слой контрактов
 
